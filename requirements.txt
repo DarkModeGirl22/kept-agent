@@ -1,0 +1,5 @@
+flask>=3.0
+pillow>=10.0
+reportlab>=4.0
+pypdf>=4.0
+imageio-ffmpeg>=0.5

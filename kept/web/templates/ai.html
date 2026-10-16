@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}: how Kept uses NVIDIA{% endblock %}
+{% block content %}
+<h1>How Kept uses NVIDIA</h1>
+<p class="lede">NVIDIA Nemotron models, served on Nebius Token Factory, do the reading and the explaining. Kept's rules do the counting and check every value. Keisha makes the final click.</p>
+
+<h2>Nemotron is the agent's brain</h2>
+<div class="panel">
+  <p class="mt0">Every day, without being asked, Kept's rules check her situation: letters, exemptions, the month, the state check, missing proof. Then <strong>NVIDIA Nemotron 3 Super</strong> takes over as the agent. It calls tools to look deeper (her month, the work still missing proof, her week ahead), decides which findings are worth a message today and which can wait, writes them about her real week, and may add one idea of its own, like asking the pantry coordinator to sign October's page on Saturday.</p>
+  <p class="mb0">Then the rules check its decision: urgent letters are always sent; every number and date must come from what the tools returned; it can't call a month that's at risk "on track"; nothing private; links only to real screens; and her weekly message limit still applies. Its reasoning, and every check, is in <a href="{{ url_for('agent_page') }}">What Kept checked</a>.</p>
+</div>
+
+<h2>The right model for each job</h2>
+<div class="panel">
+  <dl class="kv">
+    <dt>Nemotron 3.5 Super VL</dt>
+    <dd>Reads photos the way a person would: pay stubs, app screenshots, handwritten notes from a boss, sign-in sheets, letters. Also reads a screen recording of an app's earnings history, frame by frame, and lists every shift in it.</dd>
+    <dt>Nemotron 3 Nano</dt>
+    <dd>Fast, cheap, everyday: turns a one-line text or a voice note ("Dashly five to eight, made thirty-eight", in English or Spanish) into a log entry, and writes the plan's message in plain words.</dd>
+    <dt>Nemotron 3 Super</dt>
+    <dd>The agent's brain: decides each day what is worth telling her, using tools. Also plans the rest of the month around her routine: her fixed class and volunteering days first, then just enough extra shifts.</dd>
+    <dt>Nemotron 3 Ultra</dt>
+    <dd>For the hardest reading: explains a state letter in plain English and Spanish, at a 6th-grade level.</dd>
+  </dl>
+</div>
+
+<h2>AI reads, rules decide</h2>
+<ul>
+  <li><strong>Two readings, one value.</strong> Super VL writes down every line of a photo and the values it sees. Kept's rules re-read those lines on their own. When both agree, the value is marked "Read clearly". When they disagree, Kept asks her.</li>
+  <li><strong>Never invented.</strong> A number from the AI is kept only if it is written in what it read. A date in a letter's explanation must be in the letter. A shift from a video must match the row the model quoted.</li>
+  <li><strong>AI proposes, rules verify.</strong> The month plan from Nemotron is checked before it is shown: real dates left in the month, her real activities, no impossible days, enough hours to reach 80.</li>
+  <li><strong>Rules decide what counts.</strong> Hours, pay, the months the state checks, deadlines and exemptions come from a versioned rules file per state. A model doesn't decide someone's health coverage.</li>
+  <li><strong>Works when the AI doesn't.</strong> No key, a slow answer, or the daily limit: Kept falls back to its rules and asks her to type what it couldn't read.</li>
+</ul>
+
+<h2>Right now</h2>
+<div class="panel">
+  <dl class="kv">
+    <dt>Status</dt><dd>{% if st.provider == 'nvidia' and st.enabled %}{% if vision_on %}Connected to Nebius Token Factory{% else %}Paused for today (spending limit reached){% endif %}{% elif st.provider == 'ollama' %}Running on a local model on this computer (photos need typing){% elif not st.enabled %}Turned off by you{% else %}Not connected: Kept uses its rules only{% endif %}</dd>
+    {% for m in per_model %}
+    <dt>{{ m.label }}</dt><dd>{{ m.calls }} call{{ 's' if m.calls != 1 }}{% if m.avg %}, {{ '%.1f' % m.avg }} s on average{% endif %}<br><span class="tiny muted">{{ m.model }}</span></dd>
+    {% endfor %}
+    <dt>Spending limits</dt><dd>${{ '%.2f' % u.today_usd }} of ${{ '%.2f' % u.daily_cap }} today, ${{ '%.2f' % u.total_usd }} of ${{ '%.2f' % u.total_cap }} in total, and {{ per_visitor }} AI calls per visitor per day. Kept stops calling the AI before any limit is passed.</dd>
+  </dl>
+</div>
+
+<h2>What we wanted, and what we built instead</h2>
+<p>We wanted Nemotron to listen to voice notes and watch app videos directly. NVIDIA's model for that, Nemotron Nano Omni, isn't offered on Token Factory yet. So:</p>
+<ul>
+  <li><strong>Voice notes:</strong> the phone's own speech-to-text writes her words down, and Nemotron Nano understands them.</li>
+  <li><strong>App history videos:</strong> Kept keeps only the frames that changed, and Super VL reads them all in one call.</li>
+</ul>
+
+<h2>Privacy</h2>
+<p class="small">Photos and messages are sent to Nebius Token Factory to be read, and nothing else. Health and justice answers from the setup are never sent to any AI. On the public demo, everything a visitor adds is private to their browser and deleted after 24 hours.</p>
+{% endblock %}

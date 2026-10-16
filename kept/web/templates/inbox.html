@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}: messages{% endblock %}
+{% block content %}
+<h1>Messages from Kept</h1>
+{% if alerts %}
+  {% for a in alerts %}
+  <article class="alert {{ 'urgent' if a.urgent }} {{ a.kind }}">
+    <p class="tiny muted mt0">{{ a.day|dlong }}</p>
+    <h3>{{ a.title }}</h3>
+    <p class="small mt0">{{ a.body }}</p>
+  {% if a.reason and a.reason.startswith('Chosen and written by NVIDIA Nemotron') %}<p class="tiny muted mt0"><span class="badge ai">From Kept's NVIDIA Nemotron agent, checked by the rules</span></p>{% endif %}
+    <a class="btn small secondary" href="{{ a.action_url }}">{{ a.action_label }}</a>
+  </article>
+  {% endfor %}
+{% else %}
+<p class="muted">No messages yet. Kept writes only when something needs you.</p>
+{% endif %}
+<p class="small"><a href="{{ url_for('agent_page') }}">See every decision, including messages held back</a></p>
+{% endblock %}

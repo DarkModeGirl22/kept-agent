@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}: check the shifts from your video{% endblock %}
+{% block content %}
+<h1>Check the shifts from your video</h1>
+<p class="muted"><span class="badge ai">Read by {{ vision }}, checked by Kept's rules</span>
+  {% if raw.app %}<span class="badge">App: {{ raw.app }}</span>{% endif %}</p>
+
+{% if doc.status == 'confirmed' %}<div class="flash">These shifts are already saved as proof.</div>{% endif %}
+
+<div class="frames" aria-label="The frames Kept read">
+  {% for f in raw.frames %}<img src="{{ url_for('file_frame', doc_id=doc.id, n=loop.index0) }}" alt="Frame {{ loop.index }}" loading="lazy">{% endfor %}
+</div>
+<p class="small muted">Kept took the {{ raw.frames|length }} frames where the screen changed, and NVIDIA Nemotron read them all. Every number below had to be written in the row it quoted. <a href="{{ url_for('file', doc_id=doc.id) }}" target="_blank">Watch the video</a></p>
+
+{% if not rows %}
+  <div class="panel"><p class="mt0"><strong>Kept couldn't read any shifts in this video.</strong> Record again while scrolling slowly through the earnings list, or add a photo of each day instead.</p></div>
+{% else %}
+<form method="post" class="panel">
+  <label for="a">Which app is this?</label>
+  <select id="a" name="activity_id" required onchange="location.search='?activity='+this.value">
+    {% if not aid %}<option value="">Choose…</option>{% endif %}
+    {% for a in acts %}<option value="{{ a.id }}" {% if a.id == aid %}selected{% endif %}>{{ a.name }} ({{ activity_labels[a.type] }})</option>{% endfor %}
+  </select>
+
+  <ul class="rows histrows">
+    {% for r in rows %}
+    <li class="{{ 'off' if not r.selectable }}">
+      <label class="histrow">
+        <input type="checkbox" name="row" value="{{ r.i }}" {% if r.selectable %}checked{% else %}disabled{% endif %}>
+        <span class="grow">
+          <strong>{{ r.start|dshort }}{% if r.end != r.start %} to {{ r.end|dshort }}{% endif %}</strong>
+          {% if r.hours is not none %}{{ fmt_h(r.hours) }}h{% endif %}{% if r.pay is not none %}{{ ', ' if r.hours is not none }}${{ '%.2f' % r.pay }}{% endif %}
+          <span class="tiny muted quote">"{{ r.quote|replace('\n', ' · ') }}"</span>
+          {% if r.proven %}<span class="tiny">Already has proof, so it isn't added again.</span>
+          {% elif not r.ok %}<span class="tiny" style="color: var(--urgent)">Not added: {{ r.problems|join(', ') }}.</span>
+          {% elif r.typed %}
+            {% if r.diffs %}<span class="tiny" style="color: var(--risk)">You logged {% if r.typed.hours is not none %}{{ fmt_h(r.typed.hours) }}h{% endif %}{% if r.typed.income is not none %}, ${{ '%.2f' % r.typed.income }}{% endif %}. The app's numbers will replace it.</span>
+            {% else %}<span class="tiny" style="color: var(--ok)">Matches what you logged. Proof added.</span>{% endif %}
+          {% else %}<span class="tiny">New: you hadn't logged this day.</span>{% endif %}
+        </span>
+      </label>
+    </li>
+    {% endfor %}
+  </ul>
+  <p class="field-note">Untick any day that isn't right. Days you had typed are replaced by the app's numbers, so nothing is counted twice.</p>
+  <div class="btnrow">
+    <button class="btn" name="action" value="save">Save the ticked shifts</button>
+    <button class="btn secondary" name="action" value="reject" formnovalidate>Not my earnings</button>
+  </div>
+</form>
+{% endif %}
+{% endblock %}

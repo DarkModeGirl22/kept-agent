@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f1f4f0">
+  <title>Kept{% block title %}{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231f6f5c'/%3E%3Cpath d='M9 16.5l4.5 4.5L23 11' stroke='white' stroke-width='3.2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+</head>
+<body>
+{% macro navlinks() %}
+  <ul>
+    <li><a href="{{ url_for('home') }}" {% if nav == 'home' %}aria-current="page"{% endif %}>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h2M11 9h2M15 9h2M7 13h2M11 13h2"/></svg>
+      My month</a></li>
+    <li><a href="{{ url_for('calendar_page') }}" {% if nav == 'calendar_page' %}aria-current="page"{% endif %}>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
+      Calendar</a></li>
+    <li><a class="add-tab" href="{{ url_for('add') }}" {% if nav and nav.startswith('add') or nav in ('review_doc',) %}aria-current="page"{% endif %}>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      Add</a></li>
+    <li><a href="{{ url_for('folder') }}" {% if nav and nav.startswith('folder') %}aria-current="page"{% endif %}>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+      Proof folder</a></li>
+    <li><a href="{{ url_for('letters_page') }}" {% if nav and nav.startswith('letter') %}aria-current="page"{% endif %}>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
+      Letters</a></li>
+  </ul>
+{% endmacro %}
+
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="{{ url_for('home') }}" aria-label="Kept home">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#1f6f5c"/><path d="M9 16.5l4.5 4.5L23 11" stroke="#fff" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Kept
+    </a>
+    {% if person %}<nav class="topnav" aria-label="Main">{{ navlinks() }}</nav>{% endif %}
+    <div class="top-right">
+      {% if person %}
+        {% if is_demo %}
+          <a class="datechip demo" href="{{ url_for('demo_page') }}" title="Demo controls">Demo: {{ today.strftime('%a %b') }} {{ today.day }}</a>
+        {% else %}
+          <span class="datechip">{{ today.strftime('%a %b') }} {{ today.day }}</span>
+        {% endif %}
+        <a class="iconbtn" href="{{ url_for('inbox') }}" aria-label="Messages from Kept">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+        </a>
+        <a class="iconbtn" href="{{ url_for('more') }}" aria-label="More">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        </a>
+      {% endif %}
+    </div>
+  </header>
+
+  {% if public %}<p class="small muted mt0">Public demo. Please don't enter real personal information: what you add here is private to this browser and deleted after 24 hours.</p>{% endif %}
+
+  {% with msgs = get_flashed_messages() %}
+    {% for m in msgs %}<div class="flash" role="status">{{ m }}</div>{% endfor %}
+  {% endwith %}
+
+  <main class="{% block mainclass %}{% endblock %}">{% block content %}{% endblock %}</main>
+</div>
+
+{% if person %}
+<nav class="tabs" aria-label="Main">
+{{ navlinks() }}</nav>
+{% endif %}
+</body>
+</html>

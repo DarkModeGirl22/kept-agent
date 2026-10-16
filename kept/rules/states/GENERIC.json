@@ -1,0 +1,107 @@
+{
+  "state": "GENERIC",
+  "state_name": "Another state (federal minimum rules)",
+  "version": "FED-2026-10",
+  "effective": "2027-01-01",
+  "agency_short": "the state Medicaid office",
+  "submit_online": "your state's Medicaid website",
+  "sources": [
+    "https://www.kff.org/60c1aad",
+    "https://www.cbpp.org/research/health/a-guide-to-reducing-coverage-losses-through-effective-implementation-of-medicaids"
+  ],
+  "age_min": 19,
+  "age_max": 64,
+  "hours_per_month": 80,
+  "federal_minimum_wage": 7.25,
+  "income_per_month": 580.0,
+  "half_time_education_counts": true,
+  "seasonal_average_months": 6,
+  "seasonal_note": "Seasonal workers may use their average over the preceding six months. Our source describes this for income; whether hours can be averaged too is not confirmed, so Kept averages income only.",
+  "renewal_interval_months": 6,
+  "months_checked_at_renewal": 1,
+  "months_checked_at_application": 1,
+  "notice_response_days": 30,
+  "hour_activities": [
+    "work",
+    "gig",
+    "cash",
+    "self_employment",
+    "volunteer",
+    "education",
+    "job_training",
+    "work_program"
+  ],
+  "income_activities": [
+    "work",
+    "gig",
+    "cash",
+    "self_employment"
+  ],
+  "proof_by_activity": {
+    "work": "Pay stubs. The state may also check wage data automatically.",
+    "gig": "Earnings statements or screenshots from the app showing dates, time worked and pay. Montana lists tax returns for self-employment, so keep monthly records as backup.",
+    "cash": "A note or pay record from the employer with dates and hours. Kept's daily log helps here.",
+    "self_employment": "Business records or tax returns, depending on the state.",
+    "volunteer": "A signed statement from the organization showing your hours each month.",
+    "education": "School schedule or transcript showing credit hours.",
+    "job_training": "Program verification showing hours.",
+    "work_program": "Work program participation form signed by the program."
+  },
+  "exemptions": {
+    "pregnant": {
+      "label": "pregnant",
+      "proof": "Self-declaration form"
+    },
+    "postpartum": {
+      "label": "postpartum (up to 12 months after giving birth)",
+      "months_after": 12,
+      "proof": "Self-declaration form"
+    },
+    "caregiver_child": {
+      "label": "parent or caregiver of a child under 14",
+      "child_age_limit": 14,
+      "proof": "Self-declaration form"
+    },
+    "caregiver_disabled": {
+      "label": "caregiver of a person with a disability",
+      "proof": "Self-declaration form"
+    },
+    "tribal": {
+      "label": "American Indian or Alaska Native",
+      "proof": "Self-declaration form, tribal enrollment number, or IHS documentation"
+    },
+    "veteran_total_disability": {
+      "label": "veteran with a total (100%) disability rating",
+      "proof": "Statement from the VA showing the rating"
+    },
+    "medically_frail": {
+      "label": "medically frail (a serious condition that makes 80 hours hard)",
+      "proof": "Self-declaration form for new applicants, or a provider attestation",
+      "sensitive": true
+    },
+    "treatment": {
+      "label": "in a drug or alcohol treatment program",
+      "proof": "Provider documentation",
+      "sensitive": true
+    },
+    "snap_tanf_work": {
+      "label": "already meeting SNAP or TANF work rules",
+      "proof": "Usually checked by the state automatically"
+    },
+    "former_foster_youth": {
+      "label": "former foster youth under 26",
+      "age_limit": 26,
+      "proof": "Self-declaration form"
+    },
+    "released_incarceration": {
+      "label": "released from jail or prison in the last 3 months",
+      "months_after": 3,
+      "proof": "Facility documentation"
+    },
+    "hospital_stay": {
+      "label": "short-term hardship: hospital or inpatient stay",
+      "months_after": 1,
+      "proof": "Provider or facility documentation"
+    }
+  }
+}

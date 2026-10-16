@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% from "_macros.html" import timecard with context %}
+{% block title %}: {{ E.month_label(month) }}{% endblock %}
+{% block content %}
+<p class="small"><a href="{{ url_for('folder') }}">Proof folder</a></p>
+{% if counted %}<p class="badge">The state checks this month</p>{% endif %}
+{{ timecard(s, cells, month) }}
+
+<h2>Proof by activity</h2>
+{% if not acts %}<p class="muted">Nothing logged in {{ E.month_label(month) }}.</p>{% endif %}
+{% for x in acts %}
+<section class="panel">
+  <div class="month-head">
+    <h3>{{ x.a.name }}</h3>
+    {% if x.a.type == 'volunteer' %}
+      {% if x.signoff and x.signoff.status == 'signed' %}<span class="pill met">Signed</span>
+      {% else %}<span class="pill at_risk">Needs a signature</span>{% endif %}
+    {% elif x.proven == x.n %}<span class="pill met">Proof complete</span>
+    {% else %}<span class="pill at_risk">{{ x.n - x.proven }} without proof</span>{% endif %}
+  </div>
+  <p class="small muted mt0">{{ activity_labels[x.a.type] }}: {{ fmt_h(x.hours) }}h this month.</p>
+  <p class="small"><strong>What counts as proof:</strong> {{ x.need }}</p>
+  {% if x.a.type == 'volunteer' %}
+    {% if not x.signoff or x.signoff.status != 'signed' %}
+      <p class="small">Kept fills in the page with {{ x.a.name }}'s details and your {{ fmt_h(x.hours) }} hours. {{ x.a.contact_name or 'The coordinator' }} checks it and signs it. Then take a photo of the signed page.</p>
+      <div class="btnrow">
+        <form method="post" action="{{ url_for('make_signoff', month=month, aid=x.a.id) }}" target="_blank"><button class="btn small">Get the page to sign (PDF)</button></form>
+        <a class="btn secondary small" href="{{ url_for('add', activity=x.a.id) }}">Add the signed page</a>
+      </div>
+    {% endif %}
+  {% elif x.proven < x.n %}
+    <a class="btn secondary small" href="{{ url_for('proof_activity', aid=x.a.id, month=month) }}">Add proof</a>
+  {% endif %}
+</section>
+{% endfor %}
+
+{% if docs %}
+<h2>Documents</h2>
+<ul class="rows">
+  {% for d in docs %}
+  <li><a class="rowlink" href="{{ url_for('review_doc', doc_id=d.id) }}">
+    {% if not d.filename.endswith('.pdf') %}<img class="thumb" src="{{ url_for('file', doc_id=d.id) }}" alt="">{% endif %}
+    <span class="grow">{{ {'paystub': 'Pay stub', 'gig': 'App earnings', 'volunteer': 'Volunteer sheet', 'school': 'School document'}.get(d.kind, 'Document') }}
+      <span class="small muted">{{ d.original_name }}</span></span></a></li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+<div class="btnrow">
+  <a class="btn" href="{{ url_for('pdf_packet', months=month) }}" target="_blank">Proof packet (PDF)</a>
+  <a class="btn secondary" href="{{ url_for('pdf_log', months=month) }}" target="_blank">Reporting log (PDF)</a>
+</div>
+{% endblock %}

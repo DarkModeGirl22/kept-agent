@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}: proof folder{% endblock %}
+{% block content %}
+<h1>Proof folder</h1>
+<p class="muted">Every month, with its hours and its proof, ready for whenever the state asks.</p>
+
+{% if check %}
+<section class="panel">
+  <h2 class="mt0">Next check: {{ check.strftime('%B') }} {{ check.day }}, {{ check.year }}</h2>
+  <p>In {{ check_left }} days. {{ rules.state_name }} looks at the {{ checked|length }} month{{ 's' if checked|length > 1 }} before:</p>
+  <div class="btnrow">
+    <a class="btn" href="{{ url_for('pdf_packet', months=','.join(checked)) }}" target="_blank">Proof packet for these months (PDF)</a>
+    <a class="btn secondary" href="{{ url_for('pdf_log', months=','.join(checked)) }}" target="_blank">Reporting log (PDF)</a>
+  </div>
+  <p class="small muted mt0">You submit them yourself on {{ rules.submit_online }}, by mail, or at your local office. Kept never sends anything for you.</p>
+</section>
+{% endif %}
+
+<ul class="rows">
+  {% for m, s in months %}
+  <li><a class="rowlink" href="{{ url_for('folder_month', month=m) }}">
+    <div class="grow">
+      <strong>{{ E.month_label(m) }}</strong>{% if m in checked %} <span class="badge">State checks this month</span>{% endif %}
+      <div class="small muted">{{ fmt_h(s.hours_total) }}h, ${{ '%.0f' % s.income_total }}.
+        {% if s.hours_total or s.income_total %}{% if s.proof_complete %}Proof complete.{% else %}{{ s.unproven_entries }} without proof.{% endif %}{% endif %}</div>
+    </div>
+    <span class="pill {{ s.status }}">{{ E.STATUS_TEXT[s.status] }}</span>
+  </a></li>
+  {% endfor %}
+</ul>
+{% endblock %}

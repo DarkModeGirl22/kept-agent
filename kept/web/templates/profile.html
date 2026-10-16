@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}: profile{% endblock %}
+{% block content %}
+<h1>{{ person.name }}</h1>
+<p>{{ mode_text }}</p>
+
+<h2>Your situation</h2>
+<dl class="kv panel">
+  <dt>State</dt><dd>{{ c.rules.state_name }}</dd>
+  <dt>Status</dt><dd>{{ 'On Medicaid' if person.status == 'enrolled' else 'Applying' }}</dd>
+  {% if person.last_renewal %}<dt>Last renewal</dt><dd>{{ person.last_renewal|dlong }}</dd>{% endif %}
+  {% if check %}<dt>Next check</dt><dd>{{ check.strftime('%B') }} {{ check.day }}, {{ check.year }}</dd>
+  <dt>Months it looks at</dt><dd>{% for m in months %}{{ E.month_label(m) }}{{ ', ' if not loop.last }}{% endfor %}</dd>{% endif %}
+  <dt>Rule</dt><dd>80 hours or ${{ '%.0f' % c.rules.income_per_month }} a month{% if person.seasonal %}, or a 6-month income average (seasonal){% endif %}</dd>
+  <dt>Rules version</dt><dd>{{ c.rules.version }}</dd>
+</dl>
+<a class="btn secondary small" href="{{ url_for('onboarding', step=1) }}">Edit</a>
+
+<h2>Exemptions</h2>
+{% if exemptions %}
+  {% for r in exemptions %}<div class="panel"><p class="mt0">{{ r.wording(c.rules.state_name) }}</p>
+    {% if r.meets %}<p class="small muted mt0">Proof the state may ask for: {{ r.proof }}.</p>{% endif %}</div>{% endfor %}
+{% else %}
+  <p>Based on your answers, you don't meet the criteria for an exemption.</p>
+{% endif %}
+<a class="btn secondary small" href="{{ url_for('onboarding', step=2) }}">Change my answers</a>
+
+<h2>Activities</h2>
+<ul class="rows">
+  {% for a in acts %}
+  <li><div class="grow"><strong>{{ a.name }}</strong>
+    <div class="small muted">{{ activity_labels[a.type] }}{% if a.usual_day is not none %}, usually {{ WEEKDAYS[a.usual_day] }}s{% if a.usual_hours %} ({{ fmt_h(a.usual_hours) }}h){% endif %}{% endif %}{% if a.half_time %}, half-time{% endif %}</div>
+    {% if a.usual_day is not none %}<div class="tiny muted">Last confirmed {{ a.last_confirmed|dshort }}</div>{% endif %}</div>
+    {% if a.usual_day is not none %}<form method="post" action="{{ url_for('activity_confirm', aid=a.id) }}"><button class="linkbtn small">Still the same</button></form>{% endif %}
+  </li>
+  {% endfor %}
+</ul>
+<a class="btn secondary small" href="{{ url_for('onboarding', step=3) }}">Add or remove</a>
+
+<h2>Reminders</h2>
+<p>{{ {'text': 'Text message', 'whatsapp': 'WhatsApp', 'web': 'In the app'}[person.channel] }}, at most {{ person.max_alerts_week }} a week, quiet from {{ person.quiet_start }}:00 to {{ person.quiet_end }}:00. Letters and checks less than a week away are always shown.</p>
+<a class="btn secondary small" href="{{ url_for('onboarding', step=4) }}">Change</a>
+
+<h2>AI</h2>
+<p class="small">Kept's rules do all the counting. NVIDIA Nemotron models read photos, messages and letters, and every value they give is checked. <a href="{{ url_for('ai_page') }}">How Kept uses NVIDIA</a></p>
+<dl class="kv panel">
+  <dt>Reading photos</dt><dd>{{ 'On (NVIDIA Nemotron 3.5 Super VL)' if ocr_ok else 'Paused: you type the values' }}</dd>
+  <dt>Messages and plans</dt><dd>{% if not ai_enabled %}Turned off{% elif ai_on %}On ({{ ai_label }}){% else %}Paused. Kept uses its rules only.{% endif %}</dd>
+</dl>
+<form method="post" action="{{ url_for('profile_ai') }}">
+  <input type="hidden" name="on" value="{{ '0' if ai_enabled else '1' }}">
+  <button class="btn secondary small">{{ 'Turn the AI off' if ai_enabled else 'Turn the AI on' }}</button>
+</form>
+
+<h2>Your data</h2>
+<p class="small">Everything is stored on this device only. Deleting removes your answers, logs and photos.</p>
+<form method="post" action="{{ url_for('profile_delete') }}" class="panel">
+  <label for="cf">Type DELETE to confirm</label>
+  <input type="text" id="cf" name="confirm" autocomplete="off">
+  <div class="btnrow"><button class="btn danger">Delete all my data</button></div>
+</form>
+{% endblock %}

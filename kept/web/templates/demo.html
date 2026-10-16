@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}: demo{% endblock %}
+{% block content %}
+<h1>Demo controls</h1>
+<p class="muted">Keisha is fictional. Her messages are replayed on the days she sent them, and the agent runs for every day you move forward, exactly as it would for a real person.</p>
+{% if is_demo %}<p>Demo date: <strong>{{ today.strftime('%A, %B') }} {{ today.day }}, {{ today.year }}</strong></p>{% endif %}
+
+<h2>The story, in four moments</h2>
+<ol class="rows" style="list-style: none">
+  <li><div class="grow"><strong>October 20: the month is at risk</strong><div class="small muted">49.5 of 80 hours. Kept suggests her own Saturday shifts and Tuesday class.</div></div>
+    <form method="post" action="{{ url_for('demo_go') }}"><input type="hidden" name="to" value="2026-10-20"><button class="btn small">Go</button></form></li>
+  <li><div class="grow"><strong>Add proof: a Dashly statement</strong><div class="small muted">It replaces two lines she typed for the same week, so nothing counts twice.</div></div>
+    <form method="post" action="{{ url_for('demo_sample', name='sample_gig_statement') }}"><button class="btn small">Go</button></form></li>
+  <li><div class="grow"><strong>November 1: October closes</strong><div class="small muted">81 hours, done. The pantry page is ready for Diane to sign.</div></div>
+    <form method="post" action="{{ url_for('demo_go') }}"><input type="hidden" name="to" value="2026-11-01"><button class="btn small">Go</button></form></li>
+  <li><div class="grow"><strong>November 25: a letter arrives</strong><div class="small muted">The state asks for October and November. 28 days to answer.</div></div>
+    <form method="post" action="{{ url_for('demo_letter') }}"><button class="btn small">Go</button></form></li>
+</ol>
+
+<h2>Move the clock</h2>
+<div class="btnrow">
+  <form method="post" action="{{ url_for('demo_go') }}"><input type="hidden" name="to" value="next"><button class="btn secondary">Next day</button></form>
+  <form method="post" action="{{ url_for('demo_go') }}"><input type="hidden" name="to" value="week"><button class="btn secondary">One week later</button></form>
+  <form method="post" action="{{ url_for('demo_go') }}"><input type="hidden" name="to" value="2026-10-01"><button class="btn secondary">Back to October 1</button></form>
+</div>
+<form method="post" action="{{ url_for('demo_start') }}"><button class="linkbtn">Reset the demo</button></form>
+
+<h2 id="samples">Sample documents</h2>
+<p class="small muted">Fictional, marked SAMPLE. Use one to see NVIDIA Nemotron read it, or download it and upload it yourself, from Add.</p>
+<ul class="rows">
+  {% for key, sm in samples.items() %}
+  <li>{% if sm.thumb %}<img class="thumb" src="{{ url_for('sample_file', fname=sm.thumb) }}" alt="">{% else %}<span class="thumb"></span>{% endif %}
+    <span class="grow">{{ sm.label }}<br><a class="small" href="{{ url_for('sample_file', fname=sm.file) }}" download>Download</a></span>
+    <form method="post" action="{{ url_for('demo_sample', name=key) }}"><button class="btn small">Use it</button></form></li>
+  {% endfor %}
+</ul>
+{% endblock %}

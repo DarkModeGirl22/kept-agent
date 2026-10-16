@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}: add{% endblock %}
+{% block content %}
+<h1>{{ 'Add a letter from the state' if letter else 'Add your work' }}</h1>
+
+<form method="post" action="{{ url_for('add_photo') }}" enctype="multipart/form-data" id="photoform">
+  {% if preset %}<input type="hidden" name="activity_id" value="{{ preset }}">{% endif %}
+  <label class="check"><input type="checkbox" name="is_letter" value="1" {% if letter %}checked{% endif %}> This is a letter from the state</label>
+  <div class="capture">
+    <label class="tile">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.5"/></svg>
+      Take a photo
+      <input type="file" name="photo_cam" accept="image/*" capture="environment" onchange="this.form.submit()">
+    </label>
+    <label class="tile">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+      Upload a photo or PDF
+      <input type="file" name="photo_file" accept="image/*,application/pdf" onchange="this.form.submit()">
+    </label>
+  </div>
+  <p class="field-note">Pay stubs, app earnings screens, handwritten notes from your boss, signed volunteer pages, school schedules. NVIDIA Nemotron reads the dates, hours and pay, Kept's rules check them, and you confirm before anything counts.
+    {% if not ocr_ok %}<br><strong>Photo reading is paused right now</strong>, so you'll type the numbers yourself after the photo is saved.{% endif %}</p>
+  <noscript><button class="btn">Send the photo</button></noscript>
+</form>
+
+{% if not letter %}
+<h2>Or show your app's history</h2>
+<form method="post" action="{{ url_for('add_video') }}" enctype="multipart/form-data" id="videoform">
+  <div class="capture" style="grid-template-columns: 1fr">
+    <label class="tile">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M12 7v8M9 12l3 3 3-3"/></svg>
+      Upload a screen recording
+      <span class="small muted" style="font-weight:400">Record your screen while you scroll through your app's earnings. Kept logs every shift at once.</span>
+      <input type="file" name="video_file" accept="video/*" onchange="this.form.submit(); document.getElementById('videowait').hidden=false">
+    </label>
+  </div>
+  <p class="small muted" id="videowait" hidden>Reading your video with NVIDIA Nemotron… this takes about 10 seconds.</p>
+</form>
+
+<h2>Or say it, or type it in one line</h2>
+<form method="post" action="{{ url_for('add_text') }}" id="textform">
+  <label for="text" class="muted small" style="font-weight:400">For example: <em>Dashly 3-8pm $85</em>, <em>4h pantry today</em>, <em>class 2h30 yesterday</em>, or in Spanish: <em>Dashly de 5 a 8, gané 38</em></label>
+  <input type="text" id="text" name="text" autocomplete="off" required>
+  <div class="voice" id="voice" hidden>
+    <button type="button" class="btn secondary small mic" id="mic">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+      <span>Hold to talk</span>
+    </button>
+    <select id="lang" aria-label="Language">
+      <option value="en-US">English</option>
+      <option value="es-US">Español</option>
+    </select>
+    <span class="tiny muted" id="voicestate"></span>
+  </div>
+  <div class="btnrow"><button class="btn">Read it</button></div>
+</form>
+<script>
+(function () {
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return;                       // the browser can't turn speech into text: typing still works
+  var box = document.getElementById('voice'), mic = document.getElementById('mic'),
+      label = mic.querySelector('span'), state = document.getElementById('voicestate'),
+      input = document.getElementById('text'), lang = document.getElementById('lang'), rec = null, said = '';
+  box.hidden = false;
+  try { lang.value = localStorage.getItem('kept-lang') || 'en-US'; } catch (e) {}
+  lang.onchange = function () { try { localStorage.setItem('kept-lang', lang.value); } catch (e) {} };
+  function start(ev) {
+    ev.preventDefault();
+    if (rec) return;
+    said = '';
+    rec = new SR(); rec.lang = lang.value; rec.interimResults = true; rec.continuous = true;
+    rec.onresult = function (e) {
+      var t = '';
+      for (var i = 0; i < e.results.length; i++) t += e.results[i][0].transcript;
+      said = t; input.value = t;
+    };
+    rec.onerror = function (e) { state.textContent = e.error === 'not-allowed' ? 'Allow the microphone to use voice notes.' : ''; stop(); };
+    rec.onend = function () {
+      mic.classList.remove('on'); label.textContent = 'Hold to talk'; rec = null;
+      if (said.trim()) { state.textContent = 'Reading it with NVIDIA Nemotron…'; document.getElementById('textform').submit(); }
+    };
+    rec.start(); mic.classList.add('on'); label.textContent = 'Listening… release to send'; state.textContent = '';
+  }
+  function stop() { if (rec) rec.stop(); }
+  mic.addEventListener('mousedown', start); mic.addEventListener('touchstart', start, {passive: false});
+  ['mouseup', 'mouseleave', 'touchend', 'touchcancel'].forEach(function (n) { mic.addEventListener(n, stop); });
+  mic.addEventListener('keydown', function (e) { if (e.key === ' ' || e.key === 'Enter') { if (rec) stop(); else start(e); } });
+})();
+</script>
+
+<details class="panel">
+  <summary><strong>Fill in a form instead</strong></summary>
+  <form method="post" action="{{ url_for('add_manual') }}">
+    <label for="m_act">Activity</label>
+    <select id="m_act" name="activity_id" required>
+      {% for a in acts %}<option value="{{ a.id }}" {% if preset == a.id %}selected{% endif %}>{{ a.name }} ({{ activity_labels[a.type] }})</option>{% endfor %}
+    </select>
+    <div class="field-row">
+      <div><label for="m_start">Date</label><input type="date" id="m_start" name="start" value="{{ today.isoformat() }}" max="{{ today.isoformat() }}" required></div>
+      <div><label for="m_end">Until (optional)</label><input type="date" id="m_end" name="end" max="{{ today.isoformat() }}"></div>
+    </div>
+    <div class="field-row">
+      <div><label for="m_h">Hours</label><input type="number" step="0.25" min="0" id="m_h" name="hours" inputmode="decimal"></div>
+      <div><label for="m_i">Pay ($)</label><input type="number" step="0.01" min="0" id="m_i" name="income" inputmode="decimal"></div>
+    </div>
+    <div class="btnrow"><button class="btn">Save</button></div>
+  </form>
+</details>
+{% endif %}
+
+{% if is_demo %}
+<p class="small muted">Demo: no files on this phone? <a href="{{ url_for('demo_page') }}#samples">Use a sample document</a>.</p>
+{% endif %}
+{% endblock %}

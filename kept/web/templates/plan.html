@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}: plan the rest of {{ plan.month }}{% endblock %}
+{% block content %}
+<h1>Plan the rest of {{ plan.month.split()[0] }}</h1>
+<p class="lede">You have {{ fmt_h(plan.hours_total) }} of 80 hours, with {{ plan.days_left }} day{{ 's' if plan.days_left != 1 }} left.</p>
+
+{% if plan.status in ('met', 'exempt') %}
+  <div class="panel"><p class="mt0"><strong>Nothing to plan:</strong> this month already counts.</p></div>
+{% else %}
+  {% if plan.message %}<div class="panel"><p class="mt0">{{ plan.message }}</p></div>{% endif %}
+
+  <ul class="rows">
+    {% for i in plan['items'] %}
+    <li><div class="grow"><strong>{{ i.label }}</strong> · {{ i.activity }}, {{ fmt_h(i.hours) }}h{% if i.pay %} (about ${{ '%.0f' % i.pay }}){% endif %}
+      <div class="tiny muted">{{ i.why[:1]|upper }}{{ i.why[1:] }}{% if i.added %}, added by Kept's rules{% endif %}</div></div>
+      <span class="pill {{ 'met' if i.usual else 'on_track' }}">{{ 'Usual' if i.usual else 'Extra' }}</span></li>
+    {% endfor %}
+  </ul>
+
+  <div class="panel">
+    {% if plan.reaches_hours %}
+      <p class="mt0"><strong>With this plan: {{ fmt_h(plan.total_after) }} of 80 hours.</strong> {{ plan.month.split()[0] }} counts.</p>
+    {% else %}
+      <p class="mt0"><strong>With this plan: {{ fmt_h(plan.total_after) }} of 80 hours</strong>, {{ fmt_h(plan.still_short) }} short.
+        {% if plan.reaches_income %}But your pay would pass $580, which counts on its own.{% endif %}</p>
+    {% endif %}
+    {% if plan.read_by == 'ai' %}
+      <p class="small"><span class="badge ai">Proposed by {{ plan.model }}, checked by Kept's rules</span></p>
+      <details class="small"><summary>What Kept's rules checked</summary>
+        <ul>
+          <li>Every day is a day left in this month, and every activity is one of yours.</li>
+          <li>Classes and volunteering only on their usual day; no shift longer than 10 hours, no day over 12.</li>
+          <li>At least one free day in any 7, and no more extra shifts than needed to reach 80.</li>
+          <li>The message only uses numbers from the checked plan.</li>
+          {% for a in plan.adjusted %}<li>{{ a }}</li>{% endfor %}
+          {% for d, why in plan.dropped %}<li>Removed {{ d }}: {{ why }}.</li>{% endfor %}
+        </ul>
+      </details>
+    {% else %}
+      <p class="small"><span class="badge rules">Kept's rules: your usual days left this month</span></p>
+    {% endif %}
+  </div>
+  <form method="post" action="{{ url_for('plan_new') }}"><button class="btn secondary small">Make a new plan</button></form>
+  <p class="small muted">A plan is a suggestion. Only the work you log, with proof, counts.</p>
+{% endif %}
+{% endblock %}

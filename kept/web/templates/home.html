@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% from "_macros.html" import timecard with context %}
+{% block title %}: my month{% endblock %}
+{% macro alertcard(a) %}
+<article class="alert {{ 'urgent' if a.urgent }} {{ a.kind }}">
+  <h3>{{ a.title }}</h3>
+  <p class="small mt0">{{ a.body }}</p>
+  {% if a.reason and a.reason.startswith('Chosen and written by NVIDIA Nemotron') %}<p class="tiny muted mt0"><span class="badge ai">From Kept's NVIDIA Nemotron agent, checked by the rules</span></p>{% endif %}
+  <div class="acts">
+    <a class="btn small" href="{{ a.action_url }}">{{ a.action_label }}</a>
+    <form method="post" action="{{ url_for('alert_dismiss', aid=a.id) }}"><button class="linkbtn small">Got it</button></form>
+  </div>
+</article>
+{% endmacro %}
+{% block mainclass %}wide{% endblock %}
+{% block content %}
+<h1>Hi {{ person.name }}</h1>
+<div class="home-grid">
+  <div class="g-alerts">
+    {% for a in alerts %}{{ alertcard(a) }}{% endfor %}
+  </div>
+  <div class="g-main">
+    {{ timecard(s, cells, month) }}
+    <div class="btnrow">
+      <a class="btn" href="{{ url_for('add') }}">Add today's work</a>
+      {% if s.status in ('at_risk', 'on_track') %}<a class="btn secondary" href="{{ url_for('plan_page') }}">Plan the rest</a>{% endif %}
+      <a class="btn secondary" href="{{ url_for('calendar_page') }}">See the days</a>
+    </div>
+  </div>
+  <div class="g-side">
+{% if check %}
+    <section class="panel">
+      <h2 class="mt0">Next state check</h2>
+      <p><strong>{{ check.strftime('%B') }} {{ check.day }}, {{ check.year }}</strong>, in {{ check_left }} days.
+        The state will look at {% for m in months %}<a href="{{ url_for('folder_month', month=m) }}">{{ E.month_label(m) }}</a>{{ ', ' if not loop.last }}{% endfor %}.</p>
+      <p class="small muted mt0">It looks at the months just before the check, never a random one. Kept keeps every month ready.</p>
+    </section>
+    {% endif %}
+    
+    {% if recent %}
+    <h2>Recently logged</h2>
+    <ul class="rows">
+      {% for r in recent %}
+      {% set pd = proof_doc(r) %}
+      <li><a class="rowlink" href="{{ url_for('file', doc_id=pd.id, dl=1) if pd else url_for('proof_entry', eid=r.id) }}">
+        <span class="grow">
+          <strong>{{ r.name }}</strong>
+          <span class="small muted"><br>{{ r.start_date|dshort }}{% if r.end_date != r.start_date %} to {{ r.end_date|dshort }}{% endif %}:
+            {% if r.hours %}{{ fmt_h(r.hours) }}h{% endif %}{% if r.income %} ${{ '%.2f' % r.income }}{% endif %}</span>
+        </span>
+        {% if pd %}<span class="pill met">Download proof</span>{% else %}<span class="pill at_risk">Add proof</span>{% endif %}
+      </a></li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+    <p class="small muted">Mode: {{ {'full': 'full tracking', 'exempt': 'exemption', 'student': 'student', 'seasonal': 'seasonal', 'payroll': 'light'}[mode] }}. <a href="{{ url_for('agent_page') }}">What Kept checked today</a></p>
+  </div>
+</div>
+{% endblock %}

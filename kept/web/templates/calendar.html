@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}: calendar{% endblock %}
+{% block mainclass %}wide{% endblock %}
+{% block content %}
+<div class="cal-grid">
+<div>
+<div class="month-head">
+  <a class="btn secondary small" href="{{ url_for('calendar_page', month=prev) }}" aria-label="Previous month">‹</a>
+  <h1 class="center">{{ E.month_label(month) }}</h1>
+  <a class="btn secondary small" href="{{ url_for('calendar_page', month=next) }}" aria-label="Next month">›</a>
+</div>
+<p class="center small">
+  <span class="pill {{ s.status }}">{{ E.STATUS_TEXT[s.status] }}</span>
+  {{ fmt_h(s.hours_total) }} of 80 hours, ${{ '%.0f' % s.income_total }} of $580
+  {% if month in checked %}<br><strong>The state will check this month.</strong>{% endif %}
+</p>
+
+<table class="cal">
+  <thead><tr>{% for d in ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] %}<th scope="col">{{ d }}</th>{% endfor %}</tr></thead>
+  <tbody>
+  {% for w in weeks %}<tr>
+    {% for d in w %}
+      {% if d == 0 %}<td class="empty"></td>
+      {% else %}
+        {% set dd = m0.replace(day=d) %}
+        {% set items = by_day.get(d, []) %}
+        <td class="{{ 'today' if dd == today }} {{ 'future' if dd > today }} {{ 'sel' if sel == d }}">
+          <a href="{{ url_for('calendar_page', month=month, day=d) }}#day" aria-label="{{ dd.strftime('%B') }} {{ d }}: {{ items|length }} item(s)">
+            <span class="d">{{ d }}</span>
+            <span class="dots">{% for r in items %}<span class="dot {{ '' if proven(r) else 'unproven' }}" style="--cc: var(--c-{{ r.type }})"></span>{% endfor %}</span>
+            {% set h = items|selectattr('start_date', 'equalto', dd.isoformat())|map(attribute='hours')|select|sum %}
+            {% if h %}<span class="h">{{ fmt_h(h) }}h</span>{% endif %}
+          </a>
+        </td>
+      {% endif %}
+    {% endfor %}
+  </tr>{% endfor %}
+  </tbody>
+</table>
+<ul class="legend">
+  {% for t, h in s.hours_by_type.items() %}<li><i style="--cc: var(--c-{{ t }})"></i>{{ activity_labels[t] }}</li>{% endfor %}
+  <li><i class="hatch"></i>Outline = no proof yet</li>
+</ul>
+</div>
+<div class="day-panel">
+
+{% if sel %}
+<h2 id="day">{{ m0.replace(day=sel).strftime('%A, %B') }} {{ sel }}</h2>
+{% set items = by_day.get(sel, []) %}
+{% if items %}
+<ul class="rows">
+  {% for r in items %}
+  {% set pd = proof_doc(r) %}
+  <li>
+    <div class="grow"><strong>{{ r.name }}</strong>
+      <div class="small muted">{% if r.start_date != r.end_date %}{{ r.start_date|dshort }} to {{ r.end_date|dshort }} (split by day across months). {% endif %}
+        {% if r.hours %}{{ fmt_h(r.hours) }}h{% endif %}{% if r.income %} ${{ '%.2f' % r.income }}{% endif %}
+        {% if r.note %}<br>{{ r.note }}{% endif %}</div>
+      <div class="tiny muted">{% if pd %}Has proof{% else %}No proof yet{% endif %}{% if r.read_by == 'ai' %}, read by NVIDIA Nemotron{% elif r.read_by == 'rules' %}, read by Kept's rules{% endif %}</div>
+    </div>
+    <div class="actions">
+      {% if pd %}
+        <a class="btn small" href="{{ url_for('file', doc_id=pd.id, dl=1) }}">Download</a>
+      {% else %}
+        <a class="btn small" href="{{ url_for('proof_entry', eid=r.id) }}">Add proof</a>
+      {% endif %}
+      <form method="post" action="{{ url_for('entry_delete', eid=r.id) }}" onsubmit="return confirm('Remove this entry?')">
+        <input type="hidden" name="next" value="{{ url_for('calendar_page', month=month, day=sel) }}#day">
+        <button class="linkbtn tiny">Remove</button></form>
+    </div>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="muted">Nothing logged this day.</p>
+{% endif %}
+{% if m0.replace(day=sel) <= today %}<a class="btn secondary" href="{{ url_for('add') }}">Add work for this month</a>{% endif %}
+{% else %}
+<p class="small muted">Tap a day to see what's logged.</p>
+{% endif %}
+</div>
+</div>
+{% endblock %}

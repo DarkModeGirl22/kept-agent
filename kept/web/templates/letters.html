@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}: letters{% endblock %}
+{% block content %}
+<h1>Letters from the state</h1>
+<p class="muted">Take a photo of any letter about your Medicaid. Kept explains it, finds the deadline and gets your answer ready.</p>
+<a class="btn block" href="{{ url_for('add', letter=1) }}">Add a letter</a>
+
+{% if letters %}
+<h2>Your letters</h2>
+<ul class="rows">
+  {% for L in letters %}
+  {% set left = L.left %}
+  <li><a class="rowlink" href="{{ url_for('letter_page', lid=L.id) }}">
+    <div class="grow"><strong>{{ title_of(L.kind) }}</strong>
+      <div class="small muted">Received {{ L.received_date|dshort }}. Deadline {{ L.deadline|dshort }}.</div></div>
+    {% if L.status == 'responded' %}<span class="pill met">Answered</span>
+    {% elif left < 0 %}<span class="pill short">Late</span>
+    {% else %}<span class="pill {{ 'short' if left <= 7 else 'at_risk' }}">{{ left }} days left</span>{% endif %}
+  </a></li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="muted">No letters yet. When one comes, add it here the same day: the 30 days start when you receive it.</p>
+{% endif %}
+{% endblock %}

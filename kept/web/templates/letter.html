@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% from "_macros.html" import readby with context %}
+{% block title %}: letter{% endblock %}
+{% block content %}
+<p class="small"><a href="{{ url_for('letters_page') }}">Letters</a></p>
+<h1>{{ title }}</h1>
+
+<section class="panel">
+  {% if L.status == 'responded' %}
+    <p class="mt0"><span class="pill met">Answered</span> You marked this letter as answered.</p>
+  {% elif left < 0 %}
+    <p class="count" style="color: var(--urgent)">Late</p>
+    <p>The deadline was {{ L.deadline|dlong }}. Call the state office as soon as you can and say you have your proof ready.</p>
+  {% else %}
+    <p class="count">{{ left }}</p>
+    <p class="mt0"><strong>day{{ 's' if left != 1 }} left</strong> to answer. Deadline: {{ L.deadline|dlong }}.
+      {% if L.respond_by %}This date is written in the letter.{% else %}The letter gives no date, so Kept counts 30 days from when you received it ({{ L.received_date|dshort }}). Please check the letter.{% endif %}</p>
+  {% endif %}
+</section>
+
+<h2>What it says</h2>
+<p lang="en">{{ L.explanation }}</p>
+{% if L.explanation_es %}<details class="small"><summary>En español</summary><p lang="es">{{ L.explanation_es }}</p></details>{% endif %}
+<p>{% if L.read_by == 'ai' %}<span class="badge ai">Explained by NVIDIA Nemotron 3 Ultra. Deadline found by Kept's rules.</span>{% else %}{{ readby(L.read_by) }}{% endif %}</p>
+
+{% if sums %}
+<h2>The months it asks about</h2>
+<ul class="rows">
+  {% for m, s in sums %}
+  <li><a class="rowlink" href="{{ url_for('folder_month', month=m) }}">
+    <div class="grow"><strong>{{ E.month_label(m) }}</strong>
+      <div class="small muted">{{ fmt_h(s.hours_total) }}h, ${{ '%.0f' % s.income_total }}. {% if s.proof_complete %}Proof complete.{% else %}{{ s.unproven_entries }} without proof.{% endif %}</div></div>
+    <span class="pill {{ s.status }}">{{ E.STATUS_TEXT[s.status] }}</span></a></li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+{% if L.status != 'responded' %}
+<h2>What to do</h2>
+<ol>
+  <li>Open each month above and add any missing proof.</li>
+  <li><a href="{{ url_for('pdf_packet', months=','.join(months)) }}" target="_blank">Download your proof packet</a> (your log plus every document).</li>
+  <li>Send it before the deadline: online on {{ rules.submit_online }}, by mail, or at your local office. Keep a copy.</li>
+</ol>
+<form method="post" action="{{ url_for('letter_responded', lid=L.id) }}"><button class="btn block">I sent my answer</button></form>
+{% endif %}
+
+<details class="panel">
+  <summary>The deadline is wrong</summary>
+  <form method="post" action="{{ url_for('letter_deadline', lid=L.id) }}">
+    <label for="dl">Deadline written in the letter</label>
+    <input type="date" id="dl" name="deadline" value="{{ L.deadline }}">
+    <div class="btnrow"><button class="btn secondary">Save the deadline</button></div>
+  </form>
+</details>
+
+{% if L.document_id %}<h2>The letter</h2>{% if L.filename and L.filename.endswith('.pdf') %}<p><a class="btn secondary" href="{{ url_for('file', doc_id=L.document_id) }}" target="_blank">Open the letter (PDF)</a></p>{% else %}<img class="docimg" src="{{ url_for('file', doc_id=L.document_id) }}" alt="Photo of the letter">{% endif %}{% endif %}
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% from "_macros.html" import readby, conf_tag with context %}
+{% block title %}: check{% endblock %}
+{% block content %}
+<h1>Is this right?</h1>
+<p class="muted">You wrote: “{{ d.text }}” {{ readby(d.read_by) }}</p>
+{% if d.missing %}<div class="flash">Kept couldn't find {% if 'activity' in d.missing and 'hours' in d.missing %}the activity and the hours. Please fill them in.{% elif 'activity' in d.missing %}the activity. Please choose it.{% else %}the hours. Please fill them in.{% endif %} Kept never guesses.</div>{% endif %}
+
+<form method="post" action="{{ url_for('add_manual') }}" class="panel">
+  <input type="hidden" name="source" value="text">
+  <input type="hidden" name="read_by" value="{{ d.read_by }}">
+  <input type="hidden" name="note" value="Typed: {{ d.text }}">
+  <label for="a">Activity {{ conf_tag(d.confidence.activity, ask_below) }}</label>
+  <select id="a" name="activity_id" required class="{{ 'needs' if d.confidence.activity < ask_below }}">
+    {% if not d.activity_id %}<option value="">Choose…</option>{% endif %}
+    {% for a in acts %}<option value="{{ a.id }}" {% if a.id == d.activity_id %}selected{% endif %}>{{ a.name }} ({{ activity_labels[a.type] }})</option>{% endfor %}
+  </select>
+  <label for="s">Date {{ conf_tag(d.confidence.date, ask_below) }}</label>
+  <input type="date" id="s" name="start" value="{{ d.date }}" max="{{ today.isoformat() }}" required class="{{ 'needs' if d.confidence.date < ask_below }}">
+  <div class="field-row">
+    <div><label for="h">Hours</label><input type="number" step="0.25" min="0" id="h" name="hours" value="{{ d.hours if d.hours is not none }}" class="{{ 'needs' if 'hours' in d.missing }}" inputmode="decimal"></div>
+    <div><label for="i">Pay ($)</label><input type="number" step="0.01" min="0" id="i" name="income" value="{{ d.income if d.income is not none }}" inputmode="decimal"></div>
+  </div>
+  <p class="field-note">Pay only counts for paid work (jobs and apps). Volunteering and school count by hours.</p>
+  <div class="btnrow"><button class="btn">Save it</button><a class="btn secondary" href="{{ url_for('add') }}">Start over</a></div>
+</form>
+{% endblock %}

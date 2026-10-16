@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}: proof for {{ e.name }}{% endblock %}
+{% block content %}
+<p class="small"><a href="{{ url_for('proof_activity', aid=e.activity_id, month=e.start_date[:7]) }}">{{ e.name }}: jobs without proof</a></p>
+<h1>{{ 'Proof' if doc else 'Add proof' }}: {{ e.name }}</h1>
+
+<section class="panel">
+  <dl class="kv">
+    <dt>Date</dt><dd>{{ e.start_date|dlong }}{% if e.end_date != e.start_date %} to {{ e.end_date|dlong }}{% endif %}</dd>
+    {% if e.hours %}<dt>Hours</dt><dd>{{ fmt_h(e.hours) }}</dd>{% endif %}
+    {% if e.income %}<dt>Pay</dt><dd>${{ '%.2f' % e.income }}</dd>{% endif %}
+    {% if e.note %}<dt>You logged</dt><dd>{{ e.note }}</dd>{% endif %}
+  </dl>
+</section>
+
+{% if doc %}
+  <p><span class="pill met">Has proof</span></p>
+  {% if not doc.filename.endswith('.pdf') %}<img class="docimg" src="{{ url_for('file', doc_id=doc.id) }}" alt="The proof document">{% endif %}
+  <div class="btnrow"><a class="btn" href="{{ url_for('file', doc_id=doc.id, dl=1) }}">Download the proof</a></div>
+{% else %}
+<form method="post" action="{{ url_for('add_photo') }}" enctype="multipart/form-data">
+  <input type="hidden" name="entry_id" value="{{ e.id }}">
+  <div class="capture">
+    <label class="tile">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.5"/></svg>
+      Take a photo
+      <input type="file" name="photo_cam" accept="image/*" capture="environment" onchange="this.form.submit()">
+    </label>
+    <label class="tile">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+      Upload a photo or PDF
+      <input type="file" name="photo_file" accept="image/*,application/pdf" onchange="this.form.submit()">
+    </label>
+  </div>
+  <noscript><button class="btn">Send the photo</button></noscript>
+</form>
+<p class="small"><strong>What counts as proof:</strong> {{ need }}</p>
+<p class="small muted">Kept reads the photo and compares it with what you logged. If something doesn't match, it asks you. {% if not ocr_ok %}Photo reading is off on this computer, so Kept will fill in what you logged and you check it.{% endif %}
+  {% if others > 0 %}If the document also covers other days, it proves those {{ others }} other job{{ 's' if others != 1 }} too.{% endif %}</p>
+{% endif %}
+
+<form method="post" action="{{ url_for('entry_delete', eid=e.id) }}" onsubmit="return confirm('Remove this job from your log?')">
+  <input type="hidden" name="next" value="{{ url_for('calendar_page', month=e.start_date[:7]) }}">
+  <button class="linkbtn small">Remove this job (typed by mistake)</button>
+</form>
+{% endblock %}

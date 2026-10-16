@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block title %}: setup{% endblock %}
+{% block content %}
+<ol class="steps" aria-label="Step {{ step }} of {{ steps|length }}">
+  {% for s in steps %}<li class="{{ 'done' if loop.index <= step }}"></li>{% endfor %}
+</ol>
+<p class="small muted mt0">Step {{ step }} of {{ steps|length }}</p>
+<h1>{{ steps[step-1] }}</h1>
+
+{% if step == 1 %}
+<form method="post">
+  <label for="name">Your first name</label>
+  <input type="text" id="name" name="name" value="{{ p.name if p }}" autocomplete="given-name" required>
+  <label for="state">Your state</label>
+  <select id="state" name="state">
+    {% for code, nm in states %}<option value="{{ code }}" {% if p and p.state == code %}selected{% endif %}>{{ nm }}</option>{% endfor %}
+  </select>
+  <p class="field-note">Montana's exact rules are built in. For other states Kept uses the federal minimum rules: 80 hours or $580 a month, checked at each 6-month renewal.</p>
+  <label for="bd">Date of birth</label>
+  <input type="date" id="bd" name="birth_date" value="{{ p.birth_date if p and p.birth_date }}">
+  <p class="field-note">The rule applies from 19 to 64.</p>
+
+  <fieldset>
+    <legend><label class="mt0" style="margin-top:14px">Are you already on Medicaid?</label></legend>
+    <label class="check"><input type="radio" name="status" value="enrolled" {% if not p or p.status == 'enrolled' %}checked{% endif %}> Yes, I'm covered</label>
+    <label class="check"><input type="radio" name="status" value="applying" {% if p and p.status == 'applying' %}checked{% endif %}> No, I'm going to apply</label>
+  </fieldset>
+  <label for="lr">Date of your last approval or renewal</label>
+  <input type="date" id="lr" name="last_renewal" value="{{ p.last_renewal if p and p.last_renewal }}">
+  <p class="field-note">It's on your last approval letter. Kept uses it to know when the next check is (every 6 months) and which months will count.</p>
+  <label for="ad">If you're applying: when?</label>
+  <input type="date" id="ad" name="application_date" value="{{ p.application_date if p and p.application_date }}">
+  <div class="btnrow"><button class="btn block">Continue</button></div>
+</form>
+
+{% elif step == 2 %}
+<p class="muted">Some people don't have to prove hours. Tick what's true for you. The answers in the second group are private: Kept only uses them to check the rules and never puts them on anything it prints unless you claim that exemption.</p>
+<form method="post">
+  {% for key, q, dkey, dq, private in questions %}
+    {% if private and not questions[loop.index0 - 1][4] %}<hr><p class="small muted">Private questions</p>{% endif %}
+    {% set checked = answers.get(key) or (dkey and answers.get(dkey)) %}
+    <label class="check"><input type="checkbox" name="{{ key }}" value="1" {% if checked %}checked{% endif %}> {{ q }}</label>
+    {% if dkey %}
+      <div class="subq"><label for="{{ dkey }}" class="small" style="margin-top:0">{{ dq }}</label>
+        <input type="date" id="{{ dkey }}" name="{{ dkey }}" value="{{ answers.get(dkey) or '' }}"></div>
+    {% endif %}
+  {% endfor %}
+  <div class="btnrow"><button class="btn block">Continue</button></div>
+  <p class="small"><a href="{{ url_for('onboarding', step=1) }}">Back</a></p>
+</form>
+
+{% elif step == 3 %}
+<p class="muted">Add each job, app, volunteering place, school or training. Kept uses these to read your messages and plan your month.</p>
+{% if acts %}
+<ul class="rows">
+  {% for a in acts %}
+  <li><div class="grow"><strong>{{ a.name }}</strong>
+      <div class="small muted">{{ activity_labels[a.type] }}{% if a.usual_day is not none %}, usually {{ WEEKDAYS[a.usual_day] }}s{% if a.usual_hours %} ({{ fmt_h(a.usual_hours) }}h){% endif %}{% endif %}</div></div>
+    <form method="post" action="{{ url_for('activity_remove', aid=a.id) }}"><input type="hidden" name="next" value="{{ url_for('onboarding', step=3) }}"><button class="linkbtn small">Remove</button></form></li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+<form method="post" class="panel">
+  <h2 class="mt0">{{ 'Add another' if acts else 'Add your first activity' }}</h2>
+  <label for="an">Name</label>
+  <input type="text" id="an" name="name" placeholder="For example: DoorDash, Walmart, Food bank" required>
+  <label for="at">What kind?</label>
+  <select id="at" name="type">
+    {% for k, v in TYPE_OPTIONS %}<option value="{{ k }}">{{ v }}</option>{% endfor %}
+  </select>
+  <div class="field-row">
+    <div><label for="ud">Usual day</label>
+      <select id="ud" name="usual_day"><option value="">It changes</option>{% for d in WEEKDAYS %}<option value="{{ loop.index0 }}">{{ d }}</option>{% endfor %}</select></div>
+    <div><label for="uh">Usual hours</label><input type="number" step="0.25" min="0" id="uh" name="usual_hours" inputmode="decimal"></div>
+  </div>
+  <label for="pr">Pay per hour, if paid ($)</label>
+  <input type="number" step="0.01" min="0" id="pr" name="pay_rate" inputmode="decimal">
+  <label class="check"><input type="checkbox" name="half_time" value="1"> School: I'm enrolled at least half-time</label>
+  <label for="kw">Other words you use for it (optional)</label>
+  <input type="text" id="kw" name="keywords" placeholder="For example: dash, deliveries">
+  <details>
+    <summary class="small">Volunteering: organization details for the signed page</summary>
+    <label for="ct">Person who can sign</label><input type="text" id="ct" name="contact_name">
+    <label for="tx">Tax ID (501(c)(3) number)</label><input type="text" id="tx" name="org_tax_id">
+    <label for="ad2">Address</label><input type="text" id="ad2" name="org_address">
+    <label for="ph">Phone</label><input type="text" id="ph" name="org_phone">
+  </details>
+  <div class="btnrow"><button class="btn secondary">Add this activity</button></div>
+</form>
+<form method="post"><button class="btn block">Continue</button></form>
+<p class="small"><a href="{{ url_for('onboarding', step=2) }}">Back</a></p>
+
+{% elif step == 4 %}
+<form method="post">
+  <label for="ch">How should Kept remind you?</label>
+  <select id="ch" name="channel">
+    <option value="text" {% if p.channel == 'text' %}selected{% endif %}>Text message</option>
+    <option value="whatsapp" {% if p.channel == 'whatsapp' %}selected{% endif %}>WhatsApp</option>
+    <option value="web" {% if p.channel == 'web' %}selected{% endif %}>Only in the app</option>
+  </select>
+  <p class="field-note">In this version, reminders appear in the app. Text and WhatsApp sending is planned.</p>
+  <label for="lg">Language</label>
+  <select id="lg" name="language"><option value="en">English</option></select>
+  <p class="field-note">Spanish is planned.</p>
+  <div class="field-row">
+    <div><label for="qs">Quiet from</label><select id="qs" name="quiet_start">{% for h in range(17, 24) %}<option value="{{ h }}" {% if p.quiet_start == h %}selected{% endif %}>{{ h }}:00</option>{% endfor %}</select></div>
+    <div><label for="qe">Until</label><select id="qe" name="quiet_end">{% for h in range(5, 12) %}<option value="{{ h }}" {% if p.quiet_end == h %}selected{% endif %}>{{ h }}:00</option>{% endfor %}</select></div>
+  </div>
+  <label for="mx">Most reminders per week</label>
+  <select id="mx" name="max_alerts_week">{% for n in [2, 3, 4, 5, 7] %}<option value="{{ n }}" {% if p.max_alerts_week == n %}selected{% endif %}>{{ n }}</option>{% endfor %}</select>
+  <p class="field-note">Letters from the state and checks less than a week away are always shown, outside this limit.</p>
+  <label class="check"><input type="checkbox" name="seasonal" value="1" {% if p.seasonal %}checked{% endif %}> My work is seasonal (busy some months, none in others)</label>
+  <p class="field-note">Seasonal workers can use their average income over the last 6 months. Kept will track it.</p>
+  <div class="btnrow"><button class="btn block">Continue</button></div>
+  <p class="small"><a href="{{ url_for('onboarding', step=3) }}">Back</a></p>
+</form>
+
+{% elif step == 5 and plan %}
+<p class="lede">{{ plan.mode_text }}</p>
+{% set met = plan.exemptions|selectattr('meets')|list %}
+{% if plan.exemptions %}
+  <h2>Exemptions</h2>
+  {% for r in plan.exemptions %}<div class="panel"><p class="mt0">{{ r.wording(plan.rules.state_name) }}</p>
+    {% if r.meets %}<p class="small muted mt0">Proof the state may ask for: {{ r.proof }}.</p>{% endif %}</div>{% endfor %}
+{% else %}
+  <p>Based on your answers, you don't meet the criteria for an exemption, so each month needs 80 hours or $580.</p>
+{% endif %}
+{% if plan.check %}
+<h2>Your next check</h2>
+<p><strong>{{ plan.check.strftime('%B') }} {{ plan.check.day }}, {{ plan.check.year }}</strong>. The state will look at {% for m in plan.months %}{{ E.month_label(m) }}{{ ', ' if not loop.last }}{% endfor %}.</p>
+{% endif %}
+<a class="btn block" href="{{ url_for('home') }}">Go to my month</a>
+{% endif %}
+{% endblock %}

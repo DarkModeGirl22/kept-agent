@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}: add proof{% endblock %}
+{% block content %}
+<p class="small"><a href="{{ url_for('folder_month', month=month) if month else url_for('folder') }}">Proof folder</a></p>
+<h1>Add proof: {{ act.name }}</h1>
+{% if rows %}
+<p class="muted">{{ rows|length }} job{{ 's' if rows|length != 1 }} without proof{% if month %} in {{ E.month_label(month) }}{% endif %}. Choose one to add its photo.</p>
+<ul class="rows">
+  {% for r in rows %}
+  <li><a class="rowlink" href="{{ url_for('proof_entry', eid=r.id) }}">
+    <span class="grow"><strong>{{ r.start_date|dshort }}{% if r.end_date != r.start_date %} to {{ r.end_date|dshort }}{% endif %}</strong>
+      <span class="small muted"><br>{% if r.hours %}{{ fmt_h(r.hours) }}h{% endif %}{% if r.income %}{{ ', ' if r.hours }}${{ '%.2f' % r.income }}{% endif %}{% if r.note %}. {{ r.note }}{% endif %}</span></span>
+    <span class="pill upcoming">Add proof</span>
+  </a></li>
+  {% endfor %}
+</ul>
+<p class="small muted">One document can prove several of these, like a weekly statement. Add it from any of them: Kept matches it to every job inside its dates.</p>
+<p class="small"><strong>What counts as proof:</strong> {{ need }}</p>
+{% else %}
+<p>Every {{ act.name }} job{% if month %} in {{ E.month_label(month) }}{% endif %} has proof.</p>
+<a class="btn secondary" href="{{ url_for('folder_month', month=month) if month else url_for('folder') }}">Back to the proof folder</a>
+{% endif %}
+{% endblock %}

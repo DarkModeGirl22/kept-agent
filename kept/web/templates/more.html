@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}: more{% endblock %}
+{% block content %}
+<h1>More</h1>
+<ul class="rows">
+  {% if person %}
+  <li><a class="rowlink" href="{{ url_for('profile') }}"><span class="grow"><strong>My profile</strong><span class="small muted"><br>Situation, exemptions, activities, reminders, data</span></span></a></li>
+  <li><a class="rowlink" href="{{ url_for('inbox') }}"><span class="grow"><strong>Messages</strong><span class="small muted"><br>Everything Kept told you</span></span></a></li>
+  <li><a class="rowlink" href="{{ url_for('agent_page') }}"><span class="grow"><strong>What Kept checked</strong><span class="small muted"><br>The agent's daily decisions, step by step</span></span></a></li>
+  {% endif %}
+  <li><a class="rowlink" href="{{ url_for('ai_page') }}"><span class="grow"><strong>How Kept uses NVIDIA</strong><span class="small muted"><br>Which Nemotron model does what, how every answer is checked, live usage</span></span></a></li>
+  <li><a class="rowlink" href="{{ url_for('help_page') }}"><span class="grow"><strong>How Kept works</strong><span class="small muted"><br>The rule, what Kept will never do, privacy, sources</span></span></a></li>
+  <li><a class="rowlink" href="{{ url_for('demo_page') }}"><span class="grow"><strong>Demo controls</strong><span class="small muted"><br>Play Keisha's month, receive a letter, sample documents</span></span></a></li>
+  <li><a class="rowlink" href="{{ url_for('welcome') }}"><span class="grow"><strong>Start page</strong><span class="small muted"><br>Switch between the demo and your own setup</span></span></a></li>
+</ul>
+{% endblock %}

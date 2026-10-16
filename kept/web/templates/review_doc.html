@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% from "_macros.html" import readby, conf_tag with context %}
+{% block title %}: check the photo{% endblock %}
+{% block content %}
+<h1>Check what Kept read</h1>
+{% if doc.status == 'confirmed' %}<div class="flash">This photo is already saved as proof.</div>{% endif %}
+<p class="muted">{{ readby(doc.read_by if ocr_ok else 'manual') }}
+  {% if doc.kind and doc.kind != 'other' %}<span class="badge">Looks like: {{ {'paystub': 'a pay stub', 'gig': 'app earnings', 'volunteer': 'a volunteer sheet', 'school': 'a school document', 'letter': 'a letter'}[doc.kind] }}</span>{% endif %}</p>
+
+{% if doc.filename.endswith('.pdf') %}
+  <p><a href="{{ url_for('file', doc_id=doc.id) }}" target="_blank">Open the PDF</a></p>
+{% else %}
+  <img class="docimg" src="{{ url_for('file', doc_id=doc.id) }}" alt="Your photo">
+{% endif %}
+{% if not ocr_ok and not target %}<p class="small muted">Kept couldn't read text from this file, so please type the values from it.</p>{% endif %}
+
+{% if target %}
+<div class="panel">
+  <p class="mt0"><strong>Proof for:</strong> {{ target.name }}, {{ target.start_date|dshort }}{% if target.end_date != target.start_date %} to {{ target.end_date|dshort }}{% endif %}{% if target.hours %}, {{ fmt_h(target.hours) }}h{% endif %}{% if target.income %}, ${{ '%.2f' % target.income }}{% endif %}</p>
+  {% if diffs %}
+    <p class="small mt0" style="color: var(--risk)"><strong>The photo doesn't match what you logged.</strong> Which is right? Correct the boxes before saving.</p>
+    <ul class="small mt0">{% for d in diffs %}<li>{{ d.field|capitalize }}: the photo says <strong>{{ d.photo }}</strong>, you logged <strong>{{ d.typed }}</strong>.</li>{% endfor %}</ul>
+  {% elif typed_from %}
+    <p class="small muted mt0">Boxes marked "From your log" weren't on the photo, so Kept used what you logged.</p>
+  {% else %}
+    <p class="small mt0" style="color: var(--ok)">The photo matches what you logged.</p>
+  {% endif %}
+</div>
+{% endif %}
+
+<form method="post" class="panel">
+  <label for="a">Which activity? {{ conf_tag(conf.get('activity_id'), ask_below) }}</label>
+  <select id="a" name="activity_id" required class="{{ 'needs' if (conf.get('activity_id') or 0) < ask_below }}">
+    {% if not f.get('activity_id') %}<option value="">Choose…</option>{% endif %}
+    {% for a in acts %}<option value="{{ a.id }}" {% if a.id == f.get('activity_id') %}selected{% endif %}>{{ a.name }} ({{ activity_labels[a.type] }})</option>{% endfor %}
+  </select>
+  <div class="field-row">
+    <div><label for="s">From {{ (('<span class="conf ok">From your log</span>')|safe if 'period_start' in typed_from else conf_tag(conf.get('period_start'), ask_below)) }}</label>
+      <input type="date" id="s" name="start" value="{{ f.get('period_start') or '' }}" max="{{ today.isoformat() }}" required class="{{ 'needs' if (conf.get('period_start') or 0) < ask_below and 'period_start' not in typed_from }}"></div>
+    <div><label for="e">To {{ (('<span class="conf ok">From your log</span>')|safe if 'period_end' in typed_from else conf_tag(conf.get('period_end'), ask_below)) }}</label>
+      <input type="date" id="e" name="end" value="{{ f.get('period_end') or '' }}" max="{{ today.isoformat() }}" class="{{ 'needs' if (conf.get('period_end') or 0) < ask_below and 'period_end' not in typed_from }}"></div>
+  </div>
+  <div class="field-row">
+    <div><label for="h">Hours {{ (('<span class="conf ok">From your log</span>')|safe if 'hours' in typed_from else conf_tag(conf.get('hours'), ask_below)) }}</label>
+      <input type="number" step="0.01" min="0" id="h" name="hours" value="{{ f.get('hours') if f.get('hours') is not none }}" class="{{ 'needs' if (conf.get('hours') or 0) < ask_below and 'hours' not in typed_from }}" inputmode="decimal"></div>
+    <div><label for="i">Pay before taxes ($) {{ (('<span class="conf ok">From your log</span>')|safe if 'income' in typed_from else conf_tag(conf.get('income'), ask_below)) if doc.kind != 'volunteer' }}</label>
+      <input type="number" step="0.01" min="0" id="i" name="income" value="{{ f.get('income') if f.get('income') is not none }}" inputmode="decimal"></div>
+  </div>
+  <p class="field-note">Yellow boxes are the ones Kept wasn't sure about. If the photo doesn't show hours, leave Hours empty: for paid work, pay can count instead. Dates across two months are split between them automatically.</p>
+  <div class="btnrow">
+    <button class="btn" name="action" value="save">Save as proof</button>
+    <button class="btn secondary" name="action" value="reject" formnovalidate>Not a work document</button>
+  </div>
+</form>
+{% endblock %}

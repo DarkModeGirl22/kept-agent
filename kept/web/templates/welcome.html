@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}: welcome{% endblock %}
+{% block content %}
+<h1>Your work counts. Kept makes sure you can prove it.</h1>
+<p class="lede">From January 2027, adults on Medicaid must show 80 hours of work, school or volunteering each month, or $580 of pay. The state can ask for proof months later. Kept keeps it day by day, warns you while you can still fix a month, and gets everything ready when the state asks.</p>
+<p class="small muted">Photos, app videos, voice notes and letters are read by NVIDIA Nemotron. Kept's rules check every value, and you confirm. <a href="{{ url_for('ai_page') }}">How Kept uses NVIDIA</a></p>
+
+<div class="panel">
+  <h2 class="mt0">See it on Keisha's phone</h2>
+  <p class="muted">Keisha is a fictional gig worker in Montana: two delivery apps, cash shifts at a corner store, volunteering on Saturdays and a GED class. It's October 20 and her month is at risk.</p>
+  <form method="post" action="{{ url_for('demo_start') }}" onsubmit="this.querySelector('button').disabled=true; document.getElementById('opening').hidden=false"><button class="btn block">Open Keisha's demo</button></form>
+  <p class="small muted" id="opening" hidden>Opening… Kept's NVIDIA Nemotron agent is doing Keisha's daily check (a few seconds).</p>
+</div>
+
+{% if own %}
+<div class="panel">
+  <h2 class="mt0">Continue</h2>
+  {% for p in own %}<form method="post" action="{{ url_for('switch', pid=p.id) }}" class="btnrow"><button class="btn secondary block">Open {{ p.name }}'s Kept</button></form>{% endfor %}
+</div>
+{% endif %}
+
+<div class="panel">
+  <h2 class="mt0">Set it up for yourself</h2>
+  <p class="muted">Five short steps. Your answers stay on this device.</p>
+  <a class="btn secondary block" href="{{ url_for('onboarding', step=1) }}">Start my setup</a>
+</div>
+
+<p class="small muted">Kept isn't connected to any state agency. It never signs or sends anything for you: you check and submit. <a href="{{ url_for('help_page') }}">How Kept works</a></p>
+{% endblock %}

@@ -1,0 +1,58 @@
+{% macro timecard(s, cells, month, show_legend=True) %}
+<section class="panel" aria-labelledby="tc-{{ month }}">
+  <div class="month-head">
+    <h2 id="tc-{{ month }}" class="mt0">{{ E.month_label(month) }}</h2>
+    <span class="pill {{ s.status }}">{{ E.STATUS_TEXT[s.status] }}</span>
+  </div>
+  <p class="bignum">{{ fmt_h(s.hours_total) }} <small>of {{ fmt_h(s.hours_target) }} hours</small></p>
+  {% if s.status == 'exempt' %}
+    <p class="muted">You meet the criteria for an exemption this month, so hours aren't required.</p>
+  {% elif s.status == 'met' %}
+    <p><strong>This month counts.</strong>
+      {% if 'hours' in s.met_by %}You reached 80 hours.{% endif %}
+      {% if 'income' in s.met_by %}You earned ${{ '%.0f' % s.income_total }}, above $580.{% endif %}
+      {% if 'school' in s.met_by %}Half-time school counts on its own.{% endif %}
+      {% if 'seasonal_average' in s.met_by %}Your 6-month average income is ${{ '%.0f' % s.seasonal_average }}.{% endif %}
+    </p>
+  {% elif s.status in ('on_track', 'at_risk') %}
+    <p><strong>{{ s.hours_pct }}% done, {{ fmt_h(s.hours_remaining) }} hours left.</strong>
+      {{ s.days_left }} day{{ 's' if s.days_left != 1 }} to go{% if s.hours_needed_per_day %}, about {{ fmt_h(s.hours_needed_per_day) }}h a day{% endif %}.</p>
+  {% elif s.status == 'short' %}
+    <p><strong>{{ fmt_h(s.hours_remaining) }} hours short</strong> and ${{ '%.0f' % s.income_remaining }} short of $580.</p>
+  {% endif %}
+
+  <div class="card80" role="img" aria-label="{{ fmt_h(s.hours_total) }} of 80 hours logged, {{ fmt_h(s.hours_proven) }} with proof">
+    {% for c in cells %}
+      {% if c %}<div class="cell f {% if not c.proven %}unproven{% endif %} {% if c.half %}half{% endif %}" style="--cc: var(--c-{{ c.type }}); --i: {{ loop.index }}" title="{{ c.title }}{% if not c.proven %} (no proof yet){% endif %}"></div>
+      {% else %}<div class="cell"></div>{% endif %}
+    {% endfor %}
+  </div>
+  {% if show_legend %}
+  <ul class="legend">
+    {% for t, h in s.hours_by_type.items() %}<li><i style="--cc: var(--c-{{ t }})"></i>{{ activity_labels[t] }} {{ fmt_h(h) }}h</li>{% endfor %}
+    <li><i class="hatch"></i>Striped = no proof yet</li>
+  </ul>
+  {% endif %}
+
+  <div class="money">
+    <div class="bar" role="img" aria-label="${{ '%.0f' % s.income_total }} earned of $580">
+      <span class="p" style="width: {{ s.income_proven_pct }}%"></span>
+      <span class="u" style="width: {{ [s.income_pct - s.income_proven_pct, 0]|max }}%"></span>
+    </div>
+    <div class="lbl"><span>Or by income: ${{ '%.0f' % s.income_total }} of $580</span>
+      {% if s.status not in ('met', 'exempt') %}<span class="closer">{{ 'Income is closer' if s.closer_path == 'income' else 'Hours are closer' }}</span>{% endif %}</div>
+  </div>
+</section>
+{% endmacro %}
+
+{% macro readby(r) %}
+  {% if r == 'ai' %}<span class="badge ai" title="{{ ai_label }}">Read by NVIDIA Nemotron, checked by Kept's rules</span>
+  {% elif r == 'rules' %}<span class="badge rules">Read by Kept's rules</span>
+  {% else %}<span class="badge">Typed by you</span>{% endif %}
+{% endmacro %}
+
+{% macro conf_tag(c, ask_below) %}
+  {% if not c %}<span class="conf check">Not found, please fill in</span>
+  {% elif c < ask_below %}<span class="conf check">Please check</span>
+  {% else %}<span class="conf ok">Read clearly</span>{% endif %}
+{% endmacro %}

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}: what Kept checked{% endblock %}
+{% block content %}
+<h1>What Kept checked</h1>
+<p class="muted">Every day, without being asked, Kept's rules run the same checks. Then NVIDIA Nemotron, the agent's brain, looks deeper with its tools and decides what is worth telling her, and the rules check that decision. Every step is written down, including the messages it chose not to send.</p>
+
+{% if days %}
+<form method="get" class="panel">
+  <label for="d" class="mt0">Day</label>
+  <select id="d" name="day" onchange="this.form.submit()">
+    {% for d in days %}<option value="{{ d }}" {% if d == sel %}selected{% endif %}>{{ d|dlong }}</option>{% endfor %}
+  </select>
+  <noscript><button class="btn small">Show</button></noscript>
+</form>
+
+{% if alerts %}
+<h2>Messages</h2>
+<ul class="rows">
+  {% for a in alerts %}
+  <li><div class="grow"><strong>{{ a.title }}</strong>
+    <div class="small muted">{{ a.reason }}</div></div>
+    <span class="{{ 'dec-sent' if a.status in ('sent','dismissed') else 'dec-held' }}">{{ 'Sent' if a.status in ('sent','dismissed') else 'Held' }}</span></li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+<h2>Steps</h2>
+<ul class="rows log">
+  {% for l in logs %}
+  <li class="{{ 'brainrow' if l.step == 'brain' }}"><span class="step">{{ {'start': 'Start', 'letters': 'Letters', 'exemption': 'Exemption', 'month': 'This month', 'check': 'State check', 'close': 'Month close', 'proof': 'Proof', 'nudge': 'Nudge', 'reconfirm': 'Recheck', 'brain': 'Nemotron', 'deliver': 'Deliver'}.get(l.step, l.step) }}</span>
+    <span class="grow"><span class="{{ 'dec-sent' if l.decision in ('alert','sent','prepared','send') else ('dec-held' if l.decision in ('held','hold','refused') else '') }}">{{ l.decision }}</span>{% if l.detail %}: {{ l.detail }}{% endif %}</span></li>
+  {% endfor %}
+</ul>
+{% else %}
+<p>Kept hasn't run yet.</p>
+{% endif %}
+{% endblock %}

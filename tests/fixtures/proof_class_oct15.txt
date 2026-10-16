@@ -1,0 +1,14 @@
+SAMPLE - FICTIONAL
+
+Adult Learning Center
+GED class attendance record
+
+Student: Keisha Moore
+Course: GED Math Prep
+Date: Oct 15, 2026
+
+Class time 6:00 PM - 8:30 PM
+
+Hours attended: 2.5
+
+Instructor signature: M. Ortiz

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}: how it works{% endblock %}
+{% block content %}
+<h1>How Kept works</h1>
+
+<h2>The rule</h2>
+<p>From January 1, 2027, adults aged 19 to 64 on Medicaid through expansion must show, each month, 80 hours of work, volunteering, job training or school, or earnings of at least $580 (80 hours at the $7.25 federal minimum wage). Half-time school counts on its own. Seasonal workers can use their 6-month income average. Some people meet the criteria for an exemption.</p>
+<p>The state checks when you apply and at every renewal, every 6 months. It looks at the months just before the check: one month in most states, three in Montana. If it can't confirm your hours from its own data, it sends a letter and you have 30 days to send proof.</p>
+
+<h2>Why Kept exists</h2>
+<p>When Arkansas tried this in 2018, about 18,000 people lost coverage in seven months, yet a Harvard study found that almost everyone targeted was already working or should have been exempt. The problem wasn't work. It was proof. People with irregular work (apps, cash jobs, volunteering, several small jobs) are the ones the state's data can't see.</p>
+
+<h2>What Kept does</h2>
+<ul>
+  <li>Keeps your proof the day the work happens: a photo or one line of text.</li>
+  <li>Counts every month with fixed rules, and shows what's left while there's still time to fix it.</li>
+  <li>Plans with your own routine: your Saturday shift, your Tuesday class.</li>
+  <li>Prepares the volunteer page for the organization to sign each month, not three months later.</li>
+  <li>Reads letters from the state, finds the deadline and builds your answer.</li>
+</ul>
+
+<h2>What Kept will never do</h2>
+<ul>
+  <li>Invent hours or pay. If it can't read a number, it asks you.</li>
+  <li>Sign anything, or send anything to the state. You check and submit.</li>
+  <li>Let the AI decide. Hours, money, deadlines and exemptions are decided by written rules; NVIDIA Nemotron only reads and proposes, and its answers are checked.</li>
+  <li>Share your private answers. They stay on this device.</li>
+</ul>
+
+<h2>Who reads your photos</h2>
+<dl class="kv panel">
+  <dt>Photos and app videos</dt><dd>NVIDIA Nemotron 3.5 Super VL{% if not ocr_ok %} (paused right now: you type the values){% endif %}</dd>
+  <dt>Messages and voice notes</dt><dd>NVIDIA Nemotron 3 Nano</dd>
+  <dt>State letters</dt><dd>NVIDIA Nemotron 3 Ultra explains them; Kept's rules find the deadline</dd>
+</dl>
+<p class="small muted">Every value shows who read it: NVIDIA Nemotron (checked by Kept's rules), Kept's rules alone, or you. <a href="{{ url_for('ai_page') }}">How Kept uses NVIDIA</a></p>
+
+<h2>Sources</h2>
+<ul class="small">
+  <li><a href="https://www.hklaw.com/en/insights/publications/2026/06/cms-issues-interim-final-rule-implementing-medicaid-community">CMS interim final rule, June 2026 (Holland &amp; Knight summary)</a></li>
+  <li><a href="https://www.cbpp.org/research/health/a-guide-to-reducing-coverage-losses-through-effective-implementation-of-medicaids">CBPP: verification, 30-day notices, the $580 path</a></li>
+  <li><a href="https://dphhs.mt.gov/medicaidchanges/VerificationMatrix">Montana: what documentation counts</a></li>
+  <li><a href="https://www.kff.org/medicaid/an-early-look-at-policy-decisions-as-states-get-ready-to-implement-work-requirements/">KFF: how many months each state checks</a></li>
+  <li><a href="https://kffhealthnews.org/medicaid/study-arkansas-medicaid-work-requirements-hit-those-already-employed/">Arkansas 2018 (NEJM study)</a></li>
+</ul>
+<p class="small muted">Kept isn't affiliated with any government agency. It isn't legal advice.</p>
+{% endblock %}
