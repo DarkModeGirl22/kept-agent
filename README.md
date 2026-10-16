@@ -2,7 +2,7 @@
 
 *An AI agent that keeps proof of work hours, so low-income Americans don't lose their health coverage. Powered by NVIDIA Nemotron on Nebius Token Factory.*
 
-**Try it online:** LINK_PENDING (open Keisha's demo). It runs on a free server, so the first load can take up to a minute if nobody has visited recently.
+**Try it online:** https://kept-agent.onrender.com (open Keisha's demo). It runs on a free server, so the first load can take up to a minute if nobody has visited recently.
 
 **People don't lose Medicaid because they don't work. They lose it because they can't prove it.**
 
