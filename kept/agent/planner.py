@@ -191,9 +191,18 @@ def _verify(raw: dict, ctx, today: date, end: date, s) -> dict:
             "total_after": round(s.hours_total + planned_h, 2)}
 
 
+PRAISE = re.compile(r"\b(doing great|great job|keep up the good work|you'?re fine|you'?re all set|nothing to worry|"
+                    r"no need to worry|on track)\b", re.I)
+
+
 def _message_ok(msg: str, v: dict, s) -> bool:
-    """The message may only use numbers that the checked plan or the month's summary contain."""
-    if not isinstance(msg, str) or not 20 <= len(msg) <= 500:
+    """The message may only use numbers that the checked plan or the month's summary contain, must say
+    what the plan adds up to, and may not reassure her: the month isn't met yet, that's why there's a plan."""
+    if not isinstance(msg, str) or not 20 <= len(msg) <= 500 or PRAISE.search(msg):
+        return False
+    said = {float(n) for n in re.findall(r"\d+(?:\.\d+)?", msg.replace(",", ""))}
+    if not any(abs(f - float(x)) < 0.01 for f in said for x in (v["planned_hours"], v["total_after"],
+                                                               v["planned_pay"], s.income_total + v["planned_pay"])):
         return False
     allowed = {80, 580, round(s.hours_total, 2), round(s.hours_remaining, 2), round(v["planned_hours"], 2),
                round(v["total_after"], 2), round(s.income_total), round(s.income_remaining), round(v["planned_pay"])}
@@ -243,14 +252,16 @@ def make_plan(conn, ctx, today: date, fresh: bool = False) -> dict:
                     out = llm.chat_json(
                         "Write a short message to a busy worker about her plan for the rest of the month: warm, "
                         "plain, at most 2 sentences and 45 words, 6th-grade level. Group the days by what she does "
-                        "instead of listing hours for each day. Only use numbers that appear in "
+                        "instead of listing hours for each day. Say how many hours she will have after the plan. Don't "
+                        "praise her or say she is fine: the month isn't done yet. Only use numbers that appear in "
                         'the JSON. Reply JSON only: {"message": "..."}',
                         json.dumps({"hours_now": s.hours_total, "hours_after_plan": v["total_after"],
                                     "goal": 80, "plan": [{"day": i["label"], "what": i["activity"], "hours": i["hours"]}
                                                          for i in v["items"]]}),
                         task="fast", max_tokens=300)
                     msg = (out or {}).get("message")
-                v["message"] = msg.strip() if _message_ok(msg, v, s) else None
+                v["message"] = msg.strip() if _message_ok(msg, v, s) else (
+                    f"This plan takes you from {s.hours_total:g} to {v['total_after']:g} hours this month.")
                 v["read_by"] = "ai"
                 v["model"] = llm.LABELS["plan"]
                 plan = v

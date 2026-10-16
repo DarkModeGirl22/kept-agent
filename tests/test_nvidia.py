@@ -210,6 +210,9 @@ class Plan(unittest.TestCase):
              "total_after": s.hours_total + 4}
         self.assertTrue(planner._message_ok("Your pantry shift on Oct 24 adds 4 hours. Keep going!", v, s))
         self.assertFalse(planner._message_ok("Work 12 more hours on Oct 24 and you'll make $900.", v, s))
+        # found by tools/eval.py: an empty "you're doing great" while the month still needs hours
+        self.assertFalse(planner._message_ok("You're doing great! You'll work at the pantry. Keep up the good work!", v, s))
+        self.assertFalse(planner._message_ok("You'll work at the pantry on Saturday and at the store.", v, s))
 
 
 class Brain(unittest.TestCase):

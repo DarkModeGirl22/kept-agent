@@ -54,6 +54,28 @@ All calls run with reasoning traces off (`chat_template_kwargs: {"enable_thinkin
 - **Rules decide what counts.** Hours, pay, the months the state checks, deadlines and exemptions come from a versioned rules file per state (`kept/rules/states/MT.json`). A model doesn't decide someone's health coverage.
 - **Works when the AI doesn't.** No key, a timeout, or a spending limit: Kept falls back to its rules and asks her to type what it couldn't read.
 
+### How well it works, measured
+
+`tools/eval.py` runs every sample through the real code against Token Factory and compares the result with the known answer. "Asked" means Kept wasn't sure, so it asks her instead of saving a value; "wrong" means a wrong value saved without asking, the failure that matters. One full run: 42 model calls, $0.025.
+
+| Job | Model | Result | Speed, cost |
+|---|---|---|---|
+| Read 7 photos: pay stub, app screens, handwritten note, sign-in sheets | Super VL | 25 of 25 values right; **0 wrong** | 1.8 s per photo, $0.004 |
+| Read a screen recording of 8 app shifts (16 frames kept) | Super VL | 8 of 8 shifts found; 15 values right, 1 left for her (hours not read), **0 wrong**, 0 invented | 9 s, $0.007 |
+| Understand 10 typed or spoken notes, English and Spanish | Nano | Whole note right: rules alone 1 of 10, with Nemotron 8 of 10; 34 values right, 2 asked, **0 wrong** | 1 s, $0.0002 |
+| Explain 2 state letters, English and Spanish | Ultra | 2 of 2 explained, no invented date; deadline and months (rules) 2 of 2 | 1.3 s, $0.003 |
+| Plan the rest of the month (2 days) | Super, Nano | 2 of 2 reach 80 hours; the rules made 6 fixes (usual days added, 7 days in a row removed) | 1.5 s, $0.001 |
+| Decide what to tell her (3 days, tool calling) | Super | 3 of 3 decided, every message grounded in her data | about 5 calls a day, $0.003 a day |
+
+**What the first runs caught, and what we changed.** Each one now has a test (105 in total):
+1. Nano counted Spanish weekdays one day off ("el sábado", "anoche"). Day words in English and Spanish are now worked out by the rules, not the model.
+2. "Grocery deliveries" fit two of her activities and the rules picked one silently. Now Nemotron suggests one and she confirms.
+3. Nano put "banco de comida" (food bank) under the store. Spanish activity words now point to her activity of that type.
+4. For "Dashly 5-8pm, made $38", Nano guessed yesterday. A date from the model is now kept only if she said when; otherwise it's today and she confirms.
+5. A plan message said "You're doing great!" while the month was at risk. Plan messages may no longer reassure her and must say what the plan adds up to; if not, the rules write it.
+
+Models don't answer the same way every time: in another run the rules refused one of the brain's messages because it used a number Kept's data didn't have, and sent the rules' wording instead.
+
 ### Spending limits
 
 Kept stops calling the AI before any limit is passed: $1 a day and $35 in total by default (`KEPT_AI_DAILY_USD`, `KEPT_AI_TOTAL_USD`), and 60 AI calls per visitor per day on the public demo. Usage is tracked from the token counts Token Factory returns. The live numbers are on the app's **How Kept uses NVIDIA** page (More, then How Kept uses NVIDIA, or `/ai`).
@@ -77,7 +99,7 @@ We wanted Nemotron to **listen** to voice notes and **watch** app videos directl
 ## Feedback on Token Factory and NVIDIA models
 
 - **What worked well:** the OpenAI-compatible API meant one small client for four models; tool calling worked out of the box on Nemotron 3 Super and Nano; Nemotron Super VL read every one of our sample documents correctly, including handwriting; turning reasoning off took a photo read from no answer at all within 1,500 tokens to a complete answer in about 2 seconds; `response_format: json_object` worked on the text models; prices are low enough that a full run through the demo costs about one cent.
-- **What we ran into:** a vision request accepts at most 8 images, which we only learned from the error message; with reasoning on, Super VL used the whole `max_tokens` budget on its reasoning and returned no answer, so the enable-thinking switch deserves a place in the quick-start; a JSON answer once stopped one bracket short, so the client repairs that; and an Omni (audio and video) model on Token Factory would make voice notes and screen recordings fully native.
+- **What we ran into:** a vision request accepts at most 8 images, which we only learned from the error message; with reasoning on, Super VL used the whole `max_tokens` budget on its reasoning and returned no answer, so the enable-thinking switch deserves a place in the quick-start; a JSON answer once stopped one bracket short, so the client repairs that; Nano sometimes counted weekdays one day off from today's date, so dates stay with the rules; and an Omni (audio and video) model on Token Factory would make voice notes and screen recordings fully native.
 
 ## The demo
 
@@ -96,7 +118,7 @@ Without a key, Kept still runs with its rules: you type the values from photos. 
 
 ## Tests
 
-`python -m unittest discover tests` runs 102 tests, all offline: the rules (thresholds, income path, seasonal average, pay periods across months, duplicates, months checked, deadlines, exemptions), the NVIDIA layer with Nemotron's answers stood in (model routing, spending limits, JSON repair, the vision model and the rules agreeing or disagreeing, video rows checked against their quotes, Spanish voice notes, letters with invented dates refused, the month plan fixed by the rules, the agent's brain: its tool loop, and its decisions checked and overruled by the rules), the agent's whole demo month, and every screen.
+`python -m unittest discover tests` runs 105 tests, all offline: the rules (thresholds, income path, seasonal average, pay periods across months, duplicates, months checked, deadlines, exemptions), the NVIDIA layer with Nemotron's answers stood in (model routing, spending limits, JSON repair, the vision model and the rules agreeing or disagreeing, video rows checked against their quotes, Spanish voice notes and day words, a date or activity the model guessed refused, letters with invented dates refused, the month plan fixed by the rules, the agent's brain: its tool loop, and its decisions checked and overruled by the rules), the agent's whole demo month, and every screen.
 
 ## Project layout
 
@@ -113,7 +135,8 @@ kept/rules/               the rules engine and one versioned rules file per stat
 kept/services.py          saving entries, documents, videos, proof, sign-offs
 kept/pdfs.py              reporting log, volunteer page, proof packet
 kept/web/                 the app (Flask) and its screens
-tests/                    102 tests
+tests/                    105 tests
+tools/eval.py             the measured evaluation above (needs a key, about 3 cents)
 tools/                    scripts that drew the fictional samples
 ```
 

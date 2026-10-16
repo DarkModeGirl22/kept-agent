@@ -73,6 +73,26 @@ class TextLog(AIOff):
     def test_unknown_activity_is_asked(self):
         self.assertIn("activity", self.p("4h babysitting today")["missing"])
 
+    def test_spanish_days_worked_out_by_rules(self):
+        # found by tools/eval.py: the model counted Spanish weekdays one day off
+        self.assertEqual(self.p("fui al banco de comida el sábado, 4 horas")["date"], "2026-10-17")
+        self.assertEqual(self.p("hice entregas el viernes")["date"], "2026-10-16")
+        self.assertEqual(self.p("clase de GED anoche")["date"], "2026-10-19")
+        self.assertEqual(self.p("ayer en la tienda")["date"], "2026-10-19")
+        self.assertEqual(self.p("hoy en la tienda")["date"], "2026-10-20")
+        self.assertEqual(self.p("did dashly last night")["date"], "2026-10-19")
+        # and Spanish activity words point to her activity of that type
+        self.assertEqual(self.p("fui al banco de comida el sábado, 4 horas")["activity_id"], 3)
+
+    def test_two_activities_fit_means_ask(self):
+        # found by tools/eval.py: "grocery deliveries" was given to Dashly without asking
+        acts = ACTS + [{"id": 5, "name": "QuickCart", "type": "gig", "keywords": "quickcart,grocery"}]
+        r = textlog.parse("grocery delivery 2.5 hours $34 today", TODAY, acts)
+        self.assertIsNone(r["activity_id"])
+        self.assertIn("activity", r["missing"])
+        # her own name for it still wins
+        self.assertEqual(textlog.parse("quickcart delivery 2h today", TODAY, acts)["activity_id"], 5)
+
 
 class Documents(AIOff):
     def read(self, name, ai=None):
@@ -160,6 +180,15 @@ class AIGuardrails(unittest.TestCase):
              mock.patch.object(llm, "chat_json", return_value=fake):
             r = textlog.parse("did some dashly runs", TODAY, ACTS)
         self.assertIsNone(r["income"])
+
+    def test_ai_cannot_guess_a_day_she_didnt_say(self):
+        # found by tools/eval.py: "Dashly 5-8pm, made $38" was put on yesterday
+        fake = {"date": "2026-10-19", "hours": 3, "income": 38, "activity_id": 1}
+        with mock.patch.object(llm, "available", return_value=True), \
+             mock.patch.object(llm, "chat_json", return_value=fake):
+            self.assertEqual(textlog.parse("Dashly 5-8pm, made $38", TODAY, ACTS)["date"], "2026-10-20")
+            fake["date"] = "2026-10-18"
+            self.assertEqual(textlog.parse("hice entregas hace dos días", TODAY, ACTS)["date"], "2026-10-18")
 
     def test_ai_bad_answer_falls_back(self):
         with mock.patch.object(llm, "available", return_value=True), \

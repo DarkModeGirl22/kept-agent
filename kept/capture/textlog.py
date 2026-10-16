@@ -10,17 +10,23 @@ from datetime import date, timedelta
 from . import llm
 
 WEEKDAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+WEEKDAYS_ES = ["lunes", "martes", "mi[eé]rcoles", "jueves", "viernes", "s[aá]bado", "domingo"]
 MONTHS = ["january", "february", "march", "april", "may", "june", "july", "august",
           "september", "october", "november", "december"]
 
 TYPE_WORDS = {
-    "gig": ["deliver", "delivery", "deliveries", "dash", "rides", "rideshare", "driving", "driver", "gig", "orders"],
-    "volunteer": ["volunteer", "volunteered", "pantry", "food bank", "church", "shelter"],
-    "education": ["class", "school", "college", "course", "studied", "lecture"],
+    "gig": ["deliver", "delivery", "deliveries", "dash", "rides", "rideshare", "driving", "driver", "gig", "orders",
+            "entregas", "reparto", "pedidos"],
+    "volunteer": ["volunteer", "volunteered", "pantry", "food bank", "church", "shelter",
+                  "voluntari", "banco de comida", "despensa", "iglesia", "albergue"],
+    "education": ["class", "school", "college", "course", "studied", "lecture", "clase", "escuela", "curso"],
     "job_training": ["training", "workshop", "apprentice"],
     "cash": ["cash"],
     "work": ["shift", "work", "worked", "store", "job"],
 }
+
+WHEN_SAID = re.compile(r"\b(ago|before|week|day|days|night|morning|afternoon|evening|weekend|hace|antes|anteayer|"
+                       r"antier|semana|d[ií]as?|noche|ma[nñ]ana|tarde|fin de semana)\b|\d{1,2}(st|nd|rd|th)\b", re.I)
 
 CONFIDENT = 0.9
 GUESS = 0.6
@@ -32,14 +38,14 @@ def _num(s: str) -> float:
 
 def parse_date(text: str, today: date) -> tuple[date | None, float]:
     t = text.lower()
-    if re.search(r"\byesterday\b", t):
+    if re.search(r"\b(yesterday|last night|ayer|anoche)\b", t):
         return today - timedelta(days=1), CONFIDENT
-    if re.search(r"\b(today|tonight|this morning|this afternoon)\b", t):
+    if re.search(r"\b(today|tonight|this morning|this afternoon|hoy|esta ma[nñ]ana|esta tarde|esta noche)\b", t):
         return today, CONFIDENT
-    for i, w in enumerate(WEEKDAYS):
-        if re.search(rf"\b(last\s+)?{w}\b", t):
+    for i, (w, es) in enumerate(zip(WEEKDAYS, WEEKDAYS_ES)):
+        if re.search(rf"\b{w}\b|\b{es}\b", t):
             back = (today.weekday() - i) % 7
-            if re.search(rf"\blast\s+{w}\b", t) and back == 0:
+            if re.search(rf"\blast\s+{w}\b|\b{es}\s+pasado\b|\bel\s+pasado\s+{es}\b", t) and back == 0:
                 back = 7
             return today - timedelta(days=back), CONFIDENT
     m = re.search(r"\b(\d{1,2})/(\d{1,2})(?:/(\d{2,4}))?\b", t)
@@ -129,17 +135,24 @@ def parse_money(text: str) -> tuple[float | None, float]:
 
 def match_activity(text: str, activities: list[dict]) -> tuple[dict | None, float]:
     t = text.lower()
-    best, score = None, 0
-    for a in activities:
+    best, score, by_name, hits = None, 0, set(), set()
+    for ai, a in enumerate(activities):
         names = [a["name"].lower()] + [k.strip().lower() for k in (a.get("keywords") or "").split(",") if k.strip()]
-        for n in names:
+        for i, n in enumerate(names):
             if n and n in t:
                 s = len(n) + 10
+                hits.add(ai)
+                if i == 0:
+                    by_name.add(ai)
             else:
                 words = [w for w in re.findall(r"[a-z]{4,}", n)]
                 s = sum(len(w) for w in words if re.search(rf"\b{re.escape(w)}\b", t))
             if s > score:
                 best, score = a, s
+    if len(by_name) == 1:
+        return activities[by_name.pop()], CONFIDENT
+    if len(hits) > 1:
+        return None, 0.0   # two of her activities fit ("grocery deliveries"): the AI, then she, decides
     if best:
         return best, (CONFIDENT if score >= 10 else GUESS)
     for typ, words in TYPE_WORDS.items():
@@ -205,7 +218,8 @@ def parse(text: str, today: date, activities: list[dict]) -> dict:
         if out:
             used = False
             try:
-                if d is None and out.get("date"):
+                # a date only if she said when: otherwise it's today and she confirms (never a guessed day)
+                if d is None and out.get("date") and WHEN_SAID.search(text):
                     cand = date.fromisoformat(str(out["date"]))
                     if today - timedelta(days=62) <= cand <= today:
                         d, dc, used = cand, GUESS, True
