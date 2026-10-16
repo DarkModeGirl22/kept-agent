@@ -42,6 +42,6 @@ if __name__ == "__main__":
     if ip:
         print(f"  On your phone (same Wi-Fi):  http://{ip}:{port}")
     print("  AI: NVIDIA Nemotron on Nebius Token Factory" if os.environ.get("NEBIUS_API_KEY")
-          else "  AI: off (add NEBIUS_API_KEY to a .env file to turn on NVIDIA Nemotron)")
+          else "  AI: off (copy env.example to .env and add your NEBIUS_API_KEY to turn on NVIDIA Nemotron)")
     print("  Stop it with Ctrl+C.\n")
     create_app().run(host="0.0.0.0", port=port, debug=False)

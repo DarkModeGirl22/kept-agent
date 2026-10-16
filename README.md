@@ -58,6 +58,18 @@ All calls run with reasoning traces off (`chat_template_kwargs: {"enable_thinkin
 
 Kept stops calling the AI before any limit is passed: $1 a day and $35 in total by default (`KEPT_AI_DAILY_USD`, `KEPT_AI_TOTAL_USD`), and 60 AI calls per visitor per day on the public demo. Usage is tracked from the token counts Token Factory returns. The live numbers are on the app's **How Kept uses NVIDIA** page (More, then How Kept uses NVIDIA, or `/ai`).
 
+### How Token Factory accelerated our workflow
+
+- **One API, four NVIDIA models.** Token Factory speaks the OpenAI chat-completions format, so one small client (`kept/capture/llm.py`, about 350 lines, no SDK) serves Nano, Super, Ultra and Super VL. Trying a different model for a job meant changing one model name, which is how we chose Super over Nano for planning and the agent's brain.
+- **No GPUs to set up.** We went from creating a key to Nemotron reading our first pay stub in minutes, with nothing to download, host or scale.
+- **Fast enough to build with.** With reasoning off, answers come in 1 to 2 seconds (Nano, Ultra) or about 2 seconds per photo (Super VL), so we could test every change against the live models while building, not only at the end.
+- **Cheap enough to test everything.** Building and testing the whole project, every feature run live many times, cost under 5 cents of credits.
+- **Agent features ready to use.** Tool calling and JSON answers worked without extra setup, which is what made the agent's brain possible in the time we had.
+
+### Nebius tools we used, and why only Token Factory
+
+We used **Nebius Token Factory** only, for every model call. We did not use Nebius Serverless Endpoints, Serverless Jobs or AI Cloud: Kept doesn't host or fine-tune its own model, all four models it needs are already served on Token Factory, and its daily agent is a short job that runs inside the web app. The app itself is a small Python web server, which we host on a free container service (Render) so the demo stays free to run until judging ends. Moving it to Nebius Serverless would be a one-step change of host, using the same `Dockerfile`.
+
 ### What we wanted, and the constraint we designed around
 
 We wanted Nemotron to **listen** to voice notes and **watch** app videos directly. NVIDIA's model for that, Nemotron Nano Omni, isn't offered on Token Factory yet. So the phone's built-in speech-to-text writes the voice note down and Nemotron Nano understands it; and Kept keeps only the frames of a screen recording where the screen changed (ffmpeg plus a small image-difference check) and Super VL reads them, 8 per call.
@@ -74,7 +86,7 @@ Open the app and choose **Open Keisha's demo**. Keisha is fictional: a Montana g
 ## Run it yourself
 
 1. Install **Python 3.11 or newer** (on Windows, tick "Add Python to PATH").
-2. Get a key from Nebius Token Factory (https://tokenfactory.nebius.com, then API keys). Copy `.env.example` to `.env` and paste the key after `NEBIUS_API_KEY=`. The `.env` file is ignored by git.
+2. Get a key from Nebius Token Factory (https://tokenfactory.nebius.com, then API keys). Make a copy of `env.example`, name the copy `.env`, and paste the key after `NEBIUS_API_KEY=`. Never commit the `.env` file.
 3. Double-click **`start.bat`** (Windows) or run `sh start.sh` (Mac, Linux). The first time, it installs what it needs.
 4. Open **http://localhost:8000**. On your phone (same Wi-Fi), open the second link it prints; the camera button works in the phone's browser.
 
