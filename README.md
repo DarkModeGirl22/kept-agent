@@ -1,5 +1,9 @@
 # Kept
 
+[![Watch the Kept demo](https://img.youtube.com/vi/AwW_8xaWLxk/hqdefault.jpg)](https://www.youtube.com/watch?v=AwW_8xaWLxk)
+
+**▶ [Watch the Kept demo on YouTube](https://www.youtube.com/watch?v=AwW_8xaWLxk)**
+
 *An AI agent that keeps proof of work hours, so low-income Americans don't lose their health coverage. Powered by NVIDIA Nemotron on Nebius Token Factory.*
 
 **Try it online:** https://kept-agent.onrender.com (open Keisha's demo). It runs on a free server, so the first load can take up to a minute if nobody has visited recently.
