@@ -100,6 +100,35 @@ We used **Nebius Token Factory** only, for every model call. We did not use Nebi
 
 We wanted Nemotron to **listen** to voice notes and **watch** app videos directly. NVIDIA's model for that, Nemotron Nano Omni, isn't offered on Token Factory yet. So the phone's built-in speech-to-text writes the voice note down and Nemotron Nano understands it; and Kept keeps only the frames of a screen recording where the screen changed (ffmpeg plus a small image-difference check) and Super VL reads them, 8 per call.
 
+## Accessibility
+
+Kept is built for people with irregular work, little time and often little patience left for paperwork, so every step asks for as little as possible:
+
+- **Speak instead of typing.** A voice note in English or Spanish is enough to log a shift.
+- **Photograph instead of filling forms.** A pay stub, an app screenshot or a handwritten note from a manager becomes a logged entry; nobody has to copy numbers by hand.
+- **English and Spanish.** Notes are understood in both, and state letters are explained in both.
+- **Plain language.** Letters from the state, full of legal wording, are explained in short, simple sentences, with the deadline worked out by the rules.
+- **Phone first.** It runs in the phone's browser, with the camera button built in. No app to install, no account to create.
+- **Kept never asks for perfection.** If it can't read something, it asks her instead of guessing, and it still works when the AI is down.
+
+## How we learned about the problem
+
+We did not interview Medicaid enrollees directly. Instead, we read many forum threads and comment sections where people affected by the new rule describe what they fear: losing coverage while working, irregular gig and cash work that no record shows, paperwork they don't have time for, and letters they don't understand. Those stories, together with the research cited above (Arkansas in 2018, Louisiana in 2025), shaped every feature. Talking with real enrollees and the organizations that help them is the first next step.
+
+## Limitations
+
+We'd rather show what doesn't work yet than hide it:
+
+- **One state written in detail.** Montana's rules are written out (`kept/rules/states/MT.json`); every other state uses the federal minimum rules, which may differ from what that state finally decides.
+- **Small evaluation.** The measured results above come from a small set of fictional samples (7 photos, 1 screen recording, 10 notes, 2 letters). Real documents will be messier.
+- **Voice isn't heard by Nemotron.** The phone's speech-to-text writes the voice note down, and Nemotron reads the text. A word misheard by the phone can't be fixed by the model.
+- **Videos are read as still frames.** Kept keeps the frames where the screen changed, at most 8 per call. In our test, one shift's hours weren't read and were left for her to type.
+- **The model makes mistakes.** Nano understood 8 of 10 notes fully and once counted weekdays one day off, which is why dates and hours are decided by the rules. The model's answers also vary between runs: once, the rules refused a message because it used a number Kept didn't have.
+- **No accounts, no real data yet.** The public demo gives each visitor a private copy that is deleted after 24 hours. There is no login and no connection to any state system: she still sends the proof herself.
+- **The screens are in English.** Notes and letter explanations work in Spanish, but the interface itself isn't translated yet.
+- **Free hosting.** The demo sleeps when nobody visits, so the first load can take up to a minute.
+- **Not legal advice.** The federal rule is still an interim rule and states are still deciding details; Kept's rules files are versioned so they can follow those changes.
+
 ## Feedback on Token Factory and NVIDIA models
 
 - **What worked well:** the OpenAI-compatible API meant one small client for four models; tool calling worked out of the box on Nemotron 3 Super and Nano; Nemotron Super VL read every one of our sample documents correctly, including handwriting; turning reasoning off took a photo read from no answer at all within 1,500 tokens to a complete answer in about 2 seconds; `response_format: json_object` worked on the text models; prices are low enough that a full run through the demo costs about one cent.
